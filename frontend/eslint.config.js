@@ -10,6 +10,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
   globalIgnores(["dist"]),
+
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -22,10 +23,21 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     plugins: {
-      "react-hooks": reactHooks,
+      prettier: prettierPlugin,
       import: importPlugin,
+    },
+    settings: {
+      "import/resolver": {
+        typescript: {
+          project: ["./tsconfig.json", "./tsconfig.paths.json"],
+        },
+      },
     },
     rules: {
       "prettier/prettier": "error",
