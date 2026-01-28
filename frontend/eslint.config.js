@@ -40,7 +40,15 @@ export default defineConfig([
       },
     },
     rules: {
-      "prettier/prettier": "error",
+      "prettier/prettier": [
+        "error",
+        {
+          singleQuote: true,
+          semi: false,
+          trailingComma: "all",
+          endOfLine: "lf",
+        },
+      ],
       "import/order": [
         "error",
         {
