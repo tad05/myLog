@@ -3,9 +3,13 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@/assets/*": ["src/assets/*"],
       "@components/*": ["src/components/*"],
-      "shared/*": ["src/components/shared/*"],
-      "@styles/*": ["src/styles/*"]
+      "@shared/*": ["src/components/shared/*"],
+      "@styles/*": ["src/styles/*"],
+      "@features/*": ["src/features/*"],
+      "@mock/*": ["src/mock/*"],
+      "@models/*": ["src/models/*"]
     }
   }
 }
