@@ -9,6 +9,8 @@ interface ListRowProps {
   right?: React.ReactNode
   withArrow?: boolean
   onClick?: () => void
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
   as?: 'div' | 'li'
   style?: SerializedStyles
 }
@@ -20,6 +22,8 @@ export const ListRow = ({
   right,
   withArrow,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
   style,
 }: ListRowProps) => {
   return (
@@ -27,6 +31,8 @@ export const ListRow = ({
       as={as}
       css={[listRowContainerStyles, style]}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       align="center"
     >
       {left && <Flex css={listRowLeftStyles}>{left}</Flex>}
@@ -69,5 +75,4 @@ function ListRowTexts({
     </Flex>
   )
 }
-
 ListRow.Texts = ListRowTexts

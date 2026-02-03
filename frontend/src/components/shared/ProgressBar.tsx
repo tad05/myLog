@@ -1,9 +1,18 @@
-import { css } from '@emotion/react'
+import { css, keyframes } from '@emotion/react'
 import { Text } from '@shared/Text'
-export const ProgressBar = ({ percent }: { percent: number }) => {
+
+interface ProgressBarProps {
+  percent: number
+  animate?: boolean
+}
+
+export const ProgressBar = ({ percent, animate = false }: ProgressBarProps) => {
   return (
     <div css={progressContainer}>
-      <div css={progressFill} style={{ width: `${percent}%` }} />
+      <div
+        css={[progressFill, animate && fillAnimationStyle]}
+        style={{ '--target-width': `${percent}%` } as React.CSSProperties}
+      />
       <span css={percentLabel} style={{ left: `${percent}%` }}>
         <Text display="block" typography="t8" bold={true} color="green">
           {percent.toFixed(1)}%
@@ -12,6 +21,15 @@ export const ProgressBar = ({ percent }: { percent: number }) => {
     </div>
   )
 }
+
+const fillAnimation = keyframes`
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--target-width);
+  }
+`
 
 const progressContainer = css`
   width: 100%;
@@ -24,11 +42,18 @@ const progressContainer = css`
     opacity: 1;
   }
 `
+
 const progressFill = css`
   height: 100%;
+  width: var(--target-width);
   background-color: var(--green);
-  transition: width 0.3s ease;
+  transition: width 3s ease;
 `
+
+const fillAnimationStyle = css`
+  animation: ${fillAnimation} 1.5s ease-out forwards;
+`
+
 const percentLabel = css`
   position: absolute;
   bottom: 100%;

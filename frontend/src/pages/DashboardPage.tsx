@@ -1,6 +1,8 @@
 import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import type { RootState } from '../store'
 import { BlogList } from '@/components/BlogList'
+import { SEARCH_TYPE } from '@/mock/blogSearchOption'
 import { useEffect, useState } from 'react'
 import { Text } from '@/components/shared/Text'
 import { Container } from '@/components/shared/Container'
@@ -11,6 +13,7 @@ import { IoGrid } from 'react-icons/io5'
 import { IoList } from 'react-icons/io5'
 
 export const DashboardPage = () => {
+  const navigate = useNavigate()
   const blogProgressList = useSelector(
     (state: RootState) => state.readingProgress.progressList,
   )
@@ -19,14 +22,21 @@ export const DashboardPage = () => {
   )
   const [scrapViewMode, setScrapViewMode] = useState<'list' | 'grid'>('grid')
 
+  const handleMoreClick = (type: string) => {
+    navigate(`/myLog/blogs?type=${type}`)
+  }
+
   useEffect(() => {
     console.log(blogProgressList)
   }, [blogProgressList])
 
   return (
-    <Flex direction="column" style={{ gap: '20px', padding: '20px' }}>
+    <Flex direction="column" style={{ gap: '10px', padding: '20px' }}>
       <Container border="1px solid var(--border)">
-        <div className="py-5 pr-[20px] flex justify-end items-center gap-1 cursor-pointer">
+        <div
+          className="pt-4 pb-2 pr-[25px] flex justify-end items-center gap-1 cursor-pointer"
+          onClick={() => handleMoreClick(SEARCH_TYPE.PROGRESS)}
+        >
           <Text typography="t7" bold={true} color="subText">
             더보기
           </Text>
@@ -40,7 +50,7 @@ export const DashboardPage = () => {
           <Flex
             align="center"
             style={{
-              padding: '20px',
+              padding: '10px 20px',
               gap: '8px',
             }}
           >
@@ -66,9 +76,10 @@ export const DashboardPage = () => {
             justify="flex-end"
             style={{
               cursor: 'pointer',
-              paddingRight: '20px',
+              paddingRight: '25px',
               gap: '4px',
             }}
+            onClick={() => handleMoreClick(SEARCH_TYPE.SCRAP)}
           >
             <Text typography="t7" bold={true} color="subText">
               더보기

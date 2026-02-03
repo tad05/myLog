@@ -11,6 +11,7 @@ export const colorPalette = css`
     --placeholder-text: #9ca3af;
     --green: #4f7663;
     --blue: #4a6cf7;
+    --hovered-item: #e2dddb;
   }
 `
 
@@ -24,6 +25,7 @@ export const colors = {
   placeholderText: 'var(--placeholder-text)',
   green: 'var(--green)',
   blue: 'var(--blue)',
+  hoveredItem: 'var(--hovered-item)',
 }
 
 export type Colors = keyof typeof colors
