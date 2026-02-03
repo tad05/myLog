@@ -3,8 +3,6 @@ import { useSearchParams } from 'react-router-dom'
 import type { RootState } from '../store'
 import { SEARCH_TYPE } from '@/mock/blogSearchOption'
 import { BlogList } from '@/components/BlogList'
-import { Container } from '@/components/shared/Container'
-import { Text } from '@/components/shared/Text'
 import { Flex } from '@/components/shared/Flex'
 
 export const BlogListPage = () => {

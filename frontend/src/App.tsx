@@ -1,7 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import { DashboardPage } from './pages/DashboardPage'
 import { BlogListPage } from './pages/BlogListPage'
-import { NavBar } from './components/NavBar'
 import { Header } from './components/Header'
 
 function App() {
