@@ -1,13 +1,26 @@
 import { ProgressBar } from '@shared/ProgressBar'
 import { css } from '@emotion/react'
+import { useNavigate } from 'react-router-dom'
 import { ListGrid } from './shared/ListGrid'
 import type { BlogInfo } from '@/models/dashboard'
 import { Text } from '@shared/Text'
 
-export const BlogGridItem = ({ title, percent }: BlogInfo) => {
+export const BlogGridItem = ({ id, title, percent }: BlogInfo) => {
+  const navigate = useNavigate()
+  const handleClick = () => {
+    navigate('/myLog/blog/' + id)
+  }
   return (
     <>
       <ListGrid
+        onClick={handleClick}
+        style={css`
+          &:hover {
+                box-shadow: 0px 0px 40px 5px var(--hovered-item);
+                cursor: pointer;
+                background-color: var(--action);
+              }
+          `}
         contents={
           <div
             css={css`
@@ -15,6 +28,7 @@ export const BlogGridItem = ({ title, percent }: BlogInfo) => {
               flex-direction: column;
               width: 100%;
               height: 100%;
+              padding : 10px;
             `}
           >
             <div

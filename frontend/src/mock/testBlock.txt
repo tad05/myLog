@@ -13,84 +13,84 @@ import { IoGrid } from 'react-icons/io5'
 import { IoList } from 'react-icons/io5'
 
 export const DashboardPage = () => {
-  const navigate = useNavigate()
-  const blogProgressList = useSelector(
+    const navigate = useNavigate()
+    const blogProgressList = useSelector(
     (state: RootState) => state.readingProgress.progressList,
-  )
-  const blogScrapList = useSelector(
+    )
+    const blogScrapList = useSelector(
     (state: RootState) => state.blogScrap.scrapList,
-  )
-  const [scrapViewMode, setScrapViewMode] = useState<'list' | 'grid'>('grid')
+    )
+    const [scrapViewMode, setScrapViewMode] = useState<'list' | 'grid'>('grid')
 
-  const handleMoreClick = (type: string) => {
+    const handleMoreClick = (type: string) => {
     navigate(`/myLog/blogs?type=${type}`)
-  }
+    }
 
-  return (
+    return (
     <Flex direction="column" style={{ gap: '10px', padding: '20px' }}>
-      <Container border="1px solid var(--border)">
+        <Container border="1px solid var(--border)">
         <div
-          className="pt-4 pb-2 pr-[25px] flex justify-end items-center gap-1 cursor-pointer"
-          onClick={() => handleMoreClick(SEARCH_TYPE.PROGRESS)}
+            className="pt-4 pb-2 pr-[25px] flex justify-end items-center gap-1 cursor-pointer"
+            onClick={() => handleMoreClick(SEARCH_TYPE.PROGRESS)}
         >
-          <Text typography="t7" bold={true} color="subText">
+            <Text typography="t7" bold={true} color="subText">
             더보기
-          </Text>
-          <IconArrowRight color="subText" width={16} height={14} />
+            </Text>
+            <IconArrowRight color="subText" width={16} height={14} />
         </div>
         {/* todo: sort이후 slice하는 로직 추가하기 */}
         <BlogList items={blogProgressList.slice(0, 5)} />
-      </Container>
-      <Container border="1px solid var(--border)">
+        </Container>
+        <Container border="1px solid var(--border)">
         <div className="grid grid-cols-2">
-          <Flex
+            <Flex
             align="center"
             style={{
-              padding: '10px 20px',
-              gap: '8px',
+                padding: '10px 20px',
+                gap: '8px',
             }}
-          >
+            >
             <IoGrid
-              size="20"
-              color={scrapViewMode === 'grid' ? 'var(--green)' : undefined}
-              style={{
+                size="20"
+                color={scrapViewMode === 'grid' ? 'var(--green)' : undefined}
+                style={{
                 cursor: 'pointer',
-              }}
-              onClick={() => setScrapViewMode('grid')}
+                }}
+                onClick={() => setScrapViewMode('grid')}
             />
             <IoList
-              size="30"
-              color={scrapViewMode === 'list' ? 'var(--green)' : undefined}
-              style={{
+                size="30"
+                color={scrapViewMode === 'list' ? 'var(--green)' : undefined}
+                style={{
                 cursor: 'pointer',
-              }}
-              onClick={() => setScrapViewMode('list')}
+                }}
+                onClick={() => setScrapViewMode('list')}
             />
-          </Flex>
-          <Flex
+            </Flex>
+            <Flex
             align="center"
             justify="flex-end"
             style={{
-              cursor: 'pointer',
-              paddingRight: '25px',
-              gap: '4px',
+                cursor: 'pointer',
+                paddingRight: '25px',
+                gap: '4px',
             }}
             onClick={() => handleMoreClick(SEARCH_TYPE.SCRAP)}
-          >
+            >
             <Text typography="t7" bold={true} color="subText">
-              더보기
+                더보기
             </Text>
             <IconArrowRight color="subText" width={16} height={14} />
-          </Flex>
+            </Flex>
         </div>
 
         {/* todo: sort이후 slice하는 로직 추가하기 */}
         {scrapViewMode === 'grid' ? (
-          <BlogGrid items={blogScrapList.slice(0, 10)} />
+            <BlogGrid items={blogScrapList.slice(0, 10)} />
         ) : (
-          <BlogList items={blogScrapList.slice(0, 10)} />
+            <BlogList items={blogScrapList.slice(0, 10)} />
         )}
-      </Container>
+        </Container>
     </Flex>
-  )
+    )
 }

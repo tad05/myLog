@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { css } from '@emotion/react'
 import { ListRow } from '@shared/ListRow'
 import { Flex } from '@shared/Flex'
@@ -6,13 +7,18 @@ import { ProgressBar } from '@shared/ProgressBar'
 import type { BlogInfo } from '@/models/dashboard'
 import { IconArrowRight } from '@/assets/arraw'
 
-export const BlogItem = ({ title, percent }: BlogInfo) => {
+export const BlogItem = ({ id, title, percent }: BlogInfo) => {
   const [isHovered, setIsHovered] = useState(false)
+  const navigate = useNavigate()
 
+  const handleClick = () => {
+    navigate('/myLog/blog/' + id)
+  }
   return (
     <ListRow
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleClick}
       contents={
         <Flex direction="column" style={{ flex: 1, gap: '5px' }}>
           <Flex justify="space-between" align="center" css={hoverRowStyles}>
@@ -32,6 +38,6 @@ const hoverRowStyles = css`
   cursor: pointer;
 
   &:hover {
-    background-color: var(--hovered-item);
+    background-color: var(--action);
   }
 `
