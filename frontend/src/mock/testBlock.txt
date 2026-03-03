@@ -21,7 +21,7 @@ export const DashboardPage = () => {
     (state: RootState) => state.blogScrap.scrapList,
     )
     const [scrapViewMode, setScrapViewMode] = useState<'list' | 'grid'>('grid')
-
+    //\*bold\*
     const handleMoreClick = (type: string) => {
     navigate(`/myLog/blogs?type=${type}`)
     }

@@ -9,7 +9,8 @@
       "@styles/*": ["src/styles/*"],
       "@features/*": ["src/features/*"],
       "@mock/*": ["src/mock/*"],
-      "@models/*": ["src/models/*"]
+      "@models/*": ["src/models/*"],
+      "@lib/*": ["src/lib/*"]
     }
   }
 }

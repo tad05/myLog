@@ -103,6 +103,93 @@ export const BlogPage = () => {
     return baseWidth
   }
 
+  // 노드 이동 함수 - 완전히 새로운 접근 방식
+  const handleMoveNode = (
+    draggedNodeId: string,
+    targetParentId: string | null,
+    position: number,
+  ) => {
+    console.log('Moving node:', { draggedNodeId, targetParentId, position })
+
+    setFlatNodes((prevNodes) => {
+      // 1. 드래그된 노드 찾기
+      const draggedNode = prevNodes.find((node) => node.id === draggedNodeId)
+      if (!draggedNode) return prevNodes
+
+      // 2. 안전성 검사
+      if (targetParentId === draggedNodeId) return prevNodes
+      if (
+        targetParentId &&
+        isDescendant(targetParentId, draggedNodeId, prevNodes)
+      ) {
+        return prevNodes
+      }
+
+      // 3. 새로운 노드 생성 (부모 변경)
+      const updatedNode = { ...draggedNode, parentId: targetParentId }
+
+      // 4. 형제 노드들 가져오기 (드래그된 노드 제외)
+      const siblings = prevNodes.filter(
+        (node) => node.parentId === targetParentId && node.id !== draggedNodeId,
+      )
+
+      // 5. 형제들 중에서 올바른 위치에 삽입
+      const newSiblingOrder = [...siblings]
+      newSiblingOrder.splice(position, 0, updatedNode)
+
+      // 6. 전체 노드 목록 재구성
+      const otherNodes = prevNodes.filter(
+        (node) => node.parentId !== targetParentId && node.id !== draggedNodeId,
+      )
+
+      // 7. 부모 노드 찾기 (삽입 기준점 결정)
+      if (targetParentId === null) {
+        // 루트 레벨: 다른 루트 노드들과 함께 배치
+        const rootNodes = otherNodes.filter((node) => node.parentId === null)
+        const nonRootNodes = otherNodes.filter((node) => node.parentId !== null)
+        return [...rootNodes, ...newSiblingOrder, ...nonRootNodes]
+      } else {
+        // 특정 부모: 부모 노드 다음에 자식들 배치
+        const result: typeof prevNodes = []
+        const parentIndex = otherNodes.findIndex(
+          (node) => node.id === targetParentId,
+        )
+
+        if (parentIndex !== -1) {
+          // 부모 노드 이전의 모든 노드들
+          result.push(...otherNodes.slice(0, parentIndex + 1))
+          // 새로운 순서의 자식들
+          result.push(...newSiblingOrder)
+          // 부모 노드 이후의 모든 노드들
+          result.push(...otherNodes.slice(parentIndex + 1))
+        } else {
+          // 부모를 찾을 수 없는 경우 (새로 생성된 부모일 수 있음)
+          result.push(...otherNodes, ...newSiblingOrder)
+        }
+
+        return result
+      }
+    })
+  }
+
+  // 하위 노드인지 확인하는 함수
+  const isDescendant = (
+    potentialDescendantId: string,
+    ancestorId: string,
+    nodes: FlatNode[],
+  ): boolean => {
+    const nodeMap = new Map(nodes.map((node) => [node.id, node]))
+    let current = nodeMap.get(potentialDescendantId)
+
+    while (current && current.parentId) {
+      if (current.parentId === ancestorId) {
+        return true
+      }
+      current = nodeMap.get(current.parentId)
+    }
+
+    return false
+  }
   return (
     <div
       style={{
@@ -128,6 +215,7 @@ export const BlogPage = () => {
           onSelect={handleLocation}
           expandedIds={expandedIds}
           onToggleExpand={handleToggleExpand}
+          onMoveNode={handleMoveNode}
         />
       </div>
       {!selectedNode?.isDirectory && selectedNode?.blogId && (

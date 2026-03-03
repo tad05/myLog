@@ -3,6 +3,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { BlogListPage } from './pages/BlogListPage'
 import { Header } from './components/Header'
 import { BlogPage } from './pages/BlogPage'
+import { BlogCreatePage } from './pages/BlogCreatePage'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/myLog" element={<DashboardPage />} />
           <Route path="/myLog/blogs" element={<BlogListPage />} />
           <Route path="/myLog/blog/:blogId" element={<BlogPage />} />
+          <Route path="/myLog/blog/new" element={<BlogCreatePage />} />
         </Routes>
       </div>
     </div>

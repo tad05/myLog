@@ -1,0 +1,110 @@
+import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import type { RootState } from '../store'
+import { BlogList } from '@/components/BlogList'
+import { SEARCH_TYPE } from '@/mock/blogSearchOption'
+import { useState } from 'react'
+import { Text } from '@/components/shared/Text'
+import { Container } from '@/components/shared/Container'
+import { Flex } from '@/components/shared/Flex'
+import { IconArrowRight } from '@/assets/arraw'
+import { BlogGrid } from '@/components/BlogGrid'
+import { IoGrid } from 'react-icons/io5'
+import { IoList } from 'react-icons/io5'
+
+export const DashboardPage = () => {
+  // ** useNaviagte, useSelector는 페이지 단위에서만 사용하기! (재사용성, 유지보수성 향상) **
+  const navigate = useNavigate()
+  const blogProgressList = useSelector(
+    (state: RootState) => state.readingProgress.progressList,
+  )
+  /*
+  1. id
+  2. title
+  위 두 개의 항목으로 구성됨
+  */
+  const blogScrapList = useSelector(
+    (state: RootState) => state.blogScrap.scrapList,
+  )
+  /*
+|   | list | grid |
+|---|------|------|
+| 장점 | 여러개 볼 수 있음 | 미리보기 가능 |
+| 단점 | 보기가 어려움 | 많이 볼 수 없음 |
+  */
+  const [scrapViewMode, setScrapViewMode] = useState<'list' | 'grid'>('grid')
+
+  const handleMoreClick = (type: string) => {
+    // todo: type string -> enum
+    navigate(`/myLog/blogs?type=${type}`)
+  }
+
+  return (
+    <Flex direction="column" style={{ gap: '10px', padding: '20px' }}>
+      <Container border="1px solid var(--border)">
+        <div
+          className="pt-4 pb-2 pr-[25px] flex justify-end items-center gap-1 cursor-pointer"
+          onClick={() => handleMoreClick(SEARCH_TYPE.PROGRESS)}
+        >
+          {/*todo: 더보기 컴포넌트로 분리하기 */}
+          <Text typography="t7" bold={true} color="subText">
+            더보기
+          </Text>
+          <IconArrowRight color="subText" width={16} height={14} />
+        </div>
+        {/* todo: sort이후 slice하는 로직 추가하기 */}
+        <BlogList items={blogProgressList.slice(0, 5)} />
+      </Container>
+      <Container border="1px solid var(--border)">
+        <div className="grid grid-cols-2">
+          <Flex
+            align="center"
+            style={{
+              padding: '10px 20px',
+              gap: '8px',
+            }}
+          >
+            <IoGrid
+              size="20"
+              color={scrapViewMode === 'grid' ? 'var(--green)' : undefined}
+              style={{
+                cursor: 'pointer',
+              }}
+              onClick={() => setScrapViewMode('grid')}
+            />
+            <IoList
+              size="30"
+              color={scrapViewMode === 'list' ? 'var(--green)' : undefined}
+              style={{
+                cursor: 'pointer',
+              }}
+              onClick={() => setScrapViewMode('list')}
+            />
+          </Flex>
+          <Flex
+            align="center"
+            justify="flex-end"
+            style={{
+              cursor: 'pointer',
+              paddingRight: '25px',
+              gap: '4px',
+            }}
+            onClick={() => handleMoreClick(SEARCH_TYPE.SCRAP)}
+          >
+            <Text typography="t7" bold={true} color="subText">
+              더보기
+            </Text>
+            <IconArrowRight color="subText" width={16} height={14} />
+          </Flex>
+        </div>
+
+        {/* todo: sort이후 slice하는 로직 추가하기 */}
+        {scrapViewMode === 'grid' ? (
+          <BlogGrid items={blogScrapList.slice(0, 10)} />
+        ) : (
+          <BlogList items={blogScrapList.slice(0, 10)} />
+        )}
+      </Container>
+    </Flex>
+  )
+}
