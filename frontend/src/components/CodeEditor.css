@@ -1,0 +1,6 @@
+.monaco-editor .drop-caret-inline::before {
+  content: '';
+  border-left: 2px solid #4dabf7;
+  margin-left: -1px;
+  height: 1.2em;
+}
