@@ -190,6 +190,21 @@ export const CodeEditor = ({
       }
     }
   }, [])
+  useEffect(() => {
+    // Monaco의 비동기 취소 에러 무시
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason?.message?.includes('Canceled')) {
+        event.preventDefault()
+      }
+    }
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [])
+
   return (
     <MonacoEditor
       width="100%"

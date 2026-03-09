@@ -1,23 +1,213 @@
+import { useEffect, useRef, memo, useCallback } from 'react'
 import { BlockRenderer } from '@/components/renderer/BlockRenderer'
 import { DndProvider } from 'react-dnd/dist/core/DndProvider'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import type { EnhancedBlockNode, CommentBlock } from '../lib/parser'
 import { useDrag } from 'react-dnd/dist/hooks/useDrag/useDrag'
 import { useDrop } from 'react-dnd/dist/hooks/useDrop/useDrop'
 
-import { parseBlocks } from '../lib/blockParser'
 import { TipTapEditor } from '@/components/TipTapEditor'
 import type { CSSObject } from '@emotion/serialize'
 import { CodeEditor } from '@/components/CodeEditor'
+
+// 블록 항목 컴포넌트를 외부로 분리 (호버 시 불필요한 리렌더링 방지)
+const BlockItem = memo(
+  ({
+    block,
+    index,
+    isEditing,
+    onCommentChange,
+    onCodeChange,
+    onSetEditing,
+    EMOTION_STYLES,
+    convertBlocksToHTML,
+    DraggableBlock,
+  }: {
+    block: EnhancedBlockNode
+    index: number
+    isEditing: boolean
+    onCommentChange: (index: number, value: string) => void
+    onCodeChange: (index: number, value: string) => void
+    onSetEditing: (index: number) => void
+    EMOTION_STYLES: CSSObject
+    convertBlocksToHTML: (blocks: any[]) => string
+    DraggableBlock: any
+  }) => {
+    // 📍 BlockItem props 변경 감지
+    useEffect(() => {
+      console.log(`📍 [BlockItem] index ${index} props:`, {
+        blockType: block.type,
+        blockContent:
+          block.type === 'code'
+            ? (block as any).code?.substring(0, 50) + '...'
+            : (block as CommentBlock).content?.substring(0, 50) + '...',
+        isEditing,
+        onCommentChangeRef: onCommentChange.toString().substring(0, 50) + '...',
+        onCodeChangeRef: onCodeChange.toString().substring(0, 50) + '...',
+        onSetEditingRef: onSetEditing.toString().substring(0, 50) + '...',
+      })
+    })
+
+    // 📍 리렌더링 감지
+    console.log(`📍 [BlockItem] Rendering index ${index}, type: ${block.type}`)
+
+    return (
+      <DraggableBlock block={block} index={index} isDraggable={!isEditing}>
+        {block.type === 'comment' ? (
+          isEditing ? (
+            <div
+              data-editing-block
+              css={{
+                border: '2px solid #007bff',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                height: '300px',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <TipTapEditor
+                content={
+                  (block as CommentBlock).blocks.length > 0
+                    ? convertBlocksToHTML((block as CommentBlock).blocks)
+                    : (block as CommentBlock).content
+                }
+                onChange={(value: string) => onCommentChange(index, value)}
+                readOnly={false}
+              />
+            </div>
+          ) : (
+            <div
+              css={{
+                background: '#f8f9fa',
+                border: '1px solid #e9ecef',
+                borderRadius: '4px',
+                padding: '12px 16px',
+                margin: '8px 0',
+                cursor: 'pointer',
+                ...EMOTION_STYLES,
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSetEditing(index)
+              }}
+            >
+              {(block as CommentBlock).blocks.length > 0 ? (
+                (block as CommentBlock).blocks.map((commentBlock, j) => (
+                  <BlockRenderer
+                    key={`comment-${index}-${j}`}
+                    block={commentBlock}
+                  />
+                ))
+              ) : (
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: (block as CommentBlock).content,
+                  }}
+                />
+              )}
+            </div>
+          )
+        ) : block.type === 'code' ? (
+          <div
+            data-code-block
+            css={{
+              border: isEditing ? '2px solid #007bff' : '1px solid #e9ecef',
+              borderRadius: '4px',
+              overflow: 'visible',
+              minHeight: '200px',
+              position: 'relative',
+            }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onSetEditing(index)
+            }}
+          >
+            <CodeEditor
+              key={`code-${index}`}
+              content={(() => {
+                const codeValue = (block as any).code
+                return codeValue
+              })()}
+              onChange={(value: string) => onCodeChange(index, value)}
+              readOnly={!isEditing}
+              height={(() => {
+                const codeValue = (block as any).code
+                // 줄 수에 따른 높이 계산: 최소 200px, 최대 600px
+                const lineCount = (codeValue?.match(/\n/g) || []).length + 1
+                const calculatedHeight = Math.min(
+                  Math.max(lineCount * 24 + 40, 200),
+                  600,
+                )
+                return `${calculatedHeight}px`
+              })()}
+            />
+          </div>
+        ) : (
+          <div
+            css={{
+              background: '#f8f9fa',
+              border: '1px solid #e9ecef',
+              borderRadius: '4px',
+              padding: '12px 16px',
+              margin: '8px 0',
+            }}
+          >
+            <BlockRenderer block={block} />
+          </div>
+        )}
+      </DraggableBlock>
+    )
+  },
+  (prevProps, nextProps) => {
+    // 📍 memo 비교 로그
+    const blockChanged = prevProps.block !== nextProps.block
+    const indexChanged = prevProps.index !== nextProps.index
+    const isEditingChanged = prevProps.isEditing !== nextProps.isEditing
+    const onCommentChangeChanged =
+      prevProps.onCommentChange !== nextProps.onCommentChange
+    const onCodeChangeChanged =
+      prevProps.onCodeChange !== nextProps.onCodeChange
+    const onSetEditingChanged =
+      prevProps.onSetEditing !== nextProps.onSetEditing
+
+    const shouldRerender =
+      blockChanged ||
+      indexChanged ||
+      isEditingChanged ||
+      onCommentChangeChanged ||
+      onCodeChangeChanged ||
+      onSetEditingChanged
+
+    console.log(`📍 [BlockItem] memo 비교 index ${nextProps.index}:`, {
+      blockChanged,
+      indexChanged,
+      isEditingChanged,
+      onCommentChangeChanged,
+      onCodeChangeChanged,
+      onSetEditingChanged,
+      shouldRerender,
+      'prevProps.onCommentChange === handleCommentChange':
+        prevProps.onCommentChange.name,
+      'nextProps.onCommentChange === handleCommentChange':
+        nextProps.onCommentChange.name,
+    })
+
+    // true를 반환하면 리렌더링 스킵, false를 반환하면 리렌더링
+    return !shouldRerender
+  },
+)
 
 export const BlogEditPage = ({
   blockList,
 }: {
   blockList: EnhancedBlockNode[]
 }) => {
-  console.log('🎨 [BlogEditPage render] blocks.length:', blockList.length)
-
+  // 📍 BlogEditPage 리렌더링 감지
+  console.log(
+    '📍 [BlogEditPage] 리렌더링 발생, blockList length:',
+    blockList.length,
+  )
   // ===== 스타일 상수 =====
   const BLOCK_HTML_STYLES = {
     tableStyle: 'border-collapse: collapse; width: 100%; margin: 16px 0;',
@@ -61,124 +251,122 @@ export const BlogEditPage = ({
       textAlign: 'left',
     } as CSSObject,
   }
-  const [blocks, setBlocks] = useState<EnhancedBlockNode[]>(() => {
-    console.log('🆕 [useState initial] blockList.length:', blockList.length)
-    console.log('🆕 Stack trace:', new Error().stack)
-    return blockList
-  })
-  const [editorLoading, setEditorLoading] = useState<{
-    [key: number]: boolean
-  }>({})
 
   const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(
     null,
   )
+  const [insertAfterIndex, setInsertAfterIndex] = useState<number | null>(null)
+  const [forceUpdate, setForceUpdate] = useState(0) // 강제 리렌더링용
 
-  // blockList가 변경되면 blocks 업데이트 (초기값 포함)
-  useEffect(() => {
-    console.log(
-      '📦 [BlogEditPage] blockList changed, length:',
-      blockList.length,
-    )
-    console.log('📋 Stack trace:', new Error().stack)
-    if (blockList.length > 0) {
-      console.log('🔄 Calling setBlocks from useEffect')
-      setBlocks(blockList)
+  // Comment 블록 onChange 콜백 (메모이제이션)
+  const handleCommentChange = useCallback(
+    (blockIndex: number, htmlValue: string) => {
+      // 현재는 로컬 변경만 처리 (부모와 동기화 필요시 콜백 추가)
+      ;(blockList[blockIndex] as CommentBlock).content = htmlValue
+      ;(blockList[blockIndex] as CommentBlock).blocks = []
+    },
+    [blockList],
+  )
+  // Code 블록 onChange 콜백 (메모이제이션)
+  const handleCodeChange = useCallback(
+    (blockIndex: number, value: string) => {
+      // 현재는 로컬 변경만 처리
+      ;(blockList[blockIndex] as any).code = value
+    },
+    [blockList],
+  )
+
+  // 편집 상태 설정 콜백 (메모이제이션)
+  const handleSetEditing = useCallback(
+    (index: number) => {
+      setEditingBlockIndex(index)
+    },
+    [], // setEditingBlockIndex는 안정적이므로 의존성에서 제거
+  )
+
+  // 새 블록 추가 함수
+  const insertBlock = (afterIndex: number, type: 'code' | 'comment') => {
+    const newBlock: EnhancedBlockNode =
+      type === 'code'
+        ? { type: 'code', code: '', lineNumber: 0 }
+        : {
+            type: 'comment',
+            content: '',
+            blocks: [],
+            position: 'inline',
+            lineNumber: 0,
+            id: `comment-${Date.now()}`,
+          }
+
+    blockList.splice(afterIndex + 1, 0, newBlock as any)
+    setInsertAfterIndex(null)
+
+    // 새로 추가된 블록을 즉시 편집 모드로 전환
+    setEditingBlockIndex(afterIndex + 1)
+  }
+
+  // 드래그 앤 드롭 이동 함수
+  const moveBlock = useCallback(
+    (dragIndex: number, hoverIndex: number) => {
+      const draggedBlock = blockList[dragIndex]
+      blockList.splice(dragIndex, 1)
+      blockList.splice(hoverIndex, 0, draggedBlock)
+
+      // React가 변경을 감지하도록 강제 리렌더링
+      setForceUpdate((prev) => prev + 1)
+
+      console.log('🔄 블록 이동:', { from: dragIndex, to: hoverIndex })
+    },
+    [blockList],
+  )
+
+  // 인접한 같은 타입의 블록들을 병합하는 함수
+  const mergeAdjacentBlocks = useCallback(() => {
+    console.log('🔗 인접 블록 병합 시작')
+
+    for (let i = blockList.length - 1; i > 0; i--) {
+      const currentBlock = blockList[i]
+      const prevBlock = blockList[i - 1]
+
+      // 인접한 블록이 같은 타입이면 병합
+      if (currentBlock.type === prevBlock.type) {
+        if (currentBlock.type === 'code') {
+          // 코드 블록 병합
+          const currentCode = (currentBlock as any).code || ''
+          const prevCode = (prevBlock as any).code || ''
+          ;(prevBlock as any).code = prevCode + '\n' + currentCode
+
+          console.log('🔗 코드 블록 병합:', { index: i - 1 })
+        } else if (currentBlock.type === 'comment') {
+          // 댓글 블록 병합
+          const currentContent = (currentBlock as CommentBlock).content || ''
+          const prevContent = (prevBlock as CommentBlock).content || ''
+          ;(prevBlock as CommentBlock).content =
+            prevContent + '\n' + currentContent
+
+          // blocks 배열도 병합
+          const currentBlocks = (currentBlock as CommentBlock).blocks || []
+          const prevBlocks = (prevBlock as CommentBlock).blocks || []
+          ;(prevBlock as CommentBlock).blocks = [
+            ...prevBlocks,
+            ...currentBlocks,
+          ]
+
+          console.log('🔗 댓글 블록 병합:', { index: i - 1 })
+        }
+
+        // 현재 블록 제거
+        blockList.splice(i, 1)
+
+        // 병합된 블록을 편집 모드로 전환
+        setEditingBlockIndex(i - 1)
+
+        // 강제 리렌더링
+        setForceUpdate((prev) => prev + 1)
+      }
     }
   }, [blockList])
 
-  // CodeEditor 로딩 상태 관리
-  const handleEditorMount = useCallback((blockIndex: number) => {
-    setEditorLoading((prev) => {
-      // 이미 false면 업데이트하지 않음 (무한 리렌더링 방지)
-      if (prev[blockIndex] === false) return prev
-      return { ...prev, [blockIndex]: false }
-    })
-  }, [])
-  // Comment 블록 onChange 콜백
-  const handleCommentChange = useCallback(
-    (blockIndex: number, htmlValue: string) => {
-      console.log('💬 [handleCommentChange] block:', blockIndex)
-      console.log('💬 Stack trace:', new Error().stack)
-      setBlocks((prevBlocks) => {
-        console.log('💬 [setBlocks in handleCommentChange] calling')
-        const newBlocks = [...prevBlocks]
-        // HTML을 그대로 content로 저장
-        ;(newBlocks[blockIndex] as CommentBlock).content = htmlValue
-        // parseBlocks는 일단 빈 배열로 (HTML 직접 렌더링할 것이므로)
-        ;(newBlocks[blockIndex] as CommentBlock).blocks = []
-        return newBlocks
-      })
-    },
-    [],
-  )
-  // Code 블록 onChange 콜백
-  const handleCodeChange = useCallback((blockIndex: number, value: string) => {
-    console.log(
-      '💻 [handleCodeChange] block:',
-      blockIndex,
-      'value length:',
-      value.length,
-    )
-    console.log('💻 Stack trace:', new Error().stack)
-    setBlocks((prevBlocks) => {
-      console.log('💻 [setBlocks in handleCodeChange] calling')
-      const newBlocks = [...prevBlocks]
-      ;(newBlocks[blockIndex] as any).code = value
-      return newBlocks
-    })
-  }, [])
-  // 인접한 블록 병합 함수 (코드 + 코멘트)
-  const mergeAdjacentBlocks = useCallback(
-    (blocks: EnhancedBlockNode[]): EnhancedBlockNode[] => {
-      const merged = []
-      let i = 0
-
-      while (i < blocks.length) {
-        const current = blocks[i]
-
-        if (current.type === 'code') {
-          let combinedCode = (current as any).code
-          let j = i + 1
-
-          while (j < blocks.length && blocks[j].type === 'code') {
-            combinedCode += '\n\n' + (blocks[j] as any).code
-            j++
-          }
-
-          merged.push({ ...current, code: combinedCode } as any)
-          i = j
-        } else if (current.type === 'comment') {
-          let combinedContent = (current as CommentBlock).content
-          let j = i + 1
-
-          while (j < blocks.length && blocks[j].type === 'comment') {
-            combinedContent += '\n\n' + (blocks[j] as CommentBlock).content
-            j++
-          }
-
-          if (j > i + 1) {
-            // 병합이 발생한 경우에만 다시 파싱
-            const newBlocks = parseBlocks(combinedContent)
-            merged.push({
-              ...current,
-              content: combinedContent,
-              blocks: newBlocks,
-            } as CommentBlock)
-          } else {
-            merged.push(current)
-          }
-          i = j
-        } else {
-          merged.push(current)
-          i++
-        }
-      }
-
-      return merged
-    },
-    [],
-  )
   // 드래그 가능한 블록 컴포넌트 (모든 타입 지원)
   const DraggableBlock = ({
     block,
@@ -202,145 +390,139 @@ export const BlogEditPage = ({
         isDragging: monitor.isDragging(),
       }),
       end: () => {
-        // 드래그 완료 후 병합 수행
+        // 드래그 완료 후 인접한 같은 타입 블록들 병합
         console.log('✅ [drag end] Merging adjacent blocks')
-        setBlocks((prevBlocks) => mergeAdjacentBlocks(prevBlocks))
+        mergeAdjacentBlocks()
       },
     })
 
-    const [{ isOver }, drop] = useDrop({
+    const [{}, drop] = useDrop({
       accept: 'BLOCK',
-      hover: (item: { index: number }, monitor) => {
-        if (!isDraggable || item.index === index) return
+      hover: (item: { index: number; blockType: string }, monitor) => {
+        if (!isDraggable || !dragRef.current) return
 
-        const hoverBoundingRect = dragRef.current?.getBoundingClientRect()
-        if (!hoverBoundingRect) return
+        const dragIndex = item.index
+        const hoverIndex = index
 
-        // hover 중간 지점을 기준으로만 이동 (reorder 최소화)
+        // 같은 위치면 무시
+        if (dragIndex === hoverIndex) {
+          return
+        }
+
+        const hoverBoundingRect = dragRef.current.getBoundingClientRect()
         const hoverMiddleY =
           (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
         const clientOffset = monitor.getClientOffset()
+
         if (!clientOffset) return
 
         const hoverClientY = clientOffset.y - hoverBoundingRect.top
 
-        // 중간 지점 넘으면 이동
-        if (item.index < index && hoverClientY < hoverMiddleY) {
+        // 드래그 방향에 따른 조건 체크하고 실제로 이동
+        if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
           return
         }
-        if (item.index > index && hoverClientY > hoverMiddleY) {
+        if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
           return
         }
 
-        moveBlock(item.index, index)
-        item.index = index
+        // 블록 위치 바꾸기 (hover 중에 실시간으로)
+        moveBlock(dragIndex, hoverIndex)
+        item.index = hoverIndex // 아이템 인덱스도 업데이트
       },
       drop: () => {
-        // ⚠️ drop 핸들러는 호출되지만 실제 병합은 useDrag의 end에서만 수행
+        // 이미 hover에서 이동했으므로 여기서는 별도 작업 없음
+        console.log('💧 드롭 완료')
       },
       collect: (monitor) => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),
       }),
     })
-    // 드래그 앤 드롭 이동 함수
-    const moveBlock = useCallback((dragIndex: number, hoverIndex: number) => {
-      setBlocks((prevBlocks) => {
-        const draggedBlock = prevBlocks[dragIndex]
-        const newBlocks = [...prevBlocks]
-        newBlocks.splice(dragIndex, 1)
-        newBlocks.splice(hoverIndex, 0, draggedBlock)
+    const convertBlockToMarkdownComment = (
+      block: EnhancedBlockNode,
+    ): string => {
+      if (block.type === 'comment') {
+        const commentBlock = block as CommentBlock
 
-        // ⚠️ hover 중에는 병합하지 않음 - drop 후에 end에서만 병합됨
-        return newBlocks
-      })
-    }, [])
-    // 블록을 마크다운 주석으로 변환하는 함수
-    const convertBlockToMarkdownComment = useCallback(
-      (block: EnhancedBlockNode): string => {
-        if (block.type === 'comment') {
-          const commentBlock = block as CommentBlock
-
-          // 파싱된 블록들을 마크다운으로 변환
-          const convertToMarkdown = (blocks: any[]): string => {
-            const getText = (children: any[]): string => {
-              return children
-                .map((child: any) => {
-                  if (child.type === 'text') return child.value || ''
-                  if (child.type === 'bold')
-                    return `**${getText(child.children)}**`
-                  if (child.type === 'italic')
-                    return `*${getText(child.children)}*`
-                  if (child.type === 'code')
-                    return `\`${getText(child.children)}\``
-                  if (child.type === 'link')
-                    return `[${getText(child.children)}](${child.url || ''})`
-                  if (child.type === 'hashtag') return `#${child.value || ''}`
-                  if (child.type === 'emoji') return child.value || ''
-                  if (child.children) return getText(child.children)
-                  return ''
-                })
-                .join('')
-            }
-            return blocks
-              .map((b: any) => {
-                switch (b.type) {
-                  case 'paragraph':
-                    // children에서 텍스트 추출
-
-                    return getText(b.children || [])
-
-                  case 'heading':
-                    const headingText = getText(b.children || [])
-                    return `${'#'.repeat(b.level || 1)} ${headingText}`
-
-                  case 'list':
-                    const listItems = b.items
-                      .map((item: any, idx: number) => {
-                        const itemText = getText(item.children || [])
-                        const prefix = b.ordered ? `${idx + 1}.` : '-'
-                        return `  ${prefix} ${itemText}`
-                      })
-                      .join('\n')
-                    return listItems
-
-                  case 'table':
-                    if (b.header && b.rows) {
-                      const headerRow = `  | ${b.header.map((cell: any) => getText(cell.children || [])).join(' | ')} |`
-                      const separator = `  |${b.header.map(() => '---|').join('')}`
-                      const dataRows = b.rows
-                        .map(
-                          (row: any[]) =>
-                            `  | ${row.map((cell: any) => getText(cell.children || [])).join(' | ')} |`,
-                        )
-                        .join('\n')
-                      return `${headerRow}\n${separator}\n${dataRows}`
-                    }
-                    return ''
-
-                  default:
-                    return ''
-                }
+        // 파싱된 블록들을 마크다운으로 변환
+        const convertToMarkdown = (blocks: any[]): string => {
+          const getText = (children: any[]): string => {
+            return children
+              .map((child: any) => {
+                if (child.type === 'text') return child.value || ''
+                if (child.type === 'bold')
+                  return `**${getText(child.children)}**`
+                if (child.type === 'italic')
+                  return `*${getText(child.children)}*`
+                if (child.type === 'code')
+                  return `\`${getText(child.children)}\``
+                if (child.type === 'link')
+                  return `[${getText(child.children)}](${child.url || ''})`
+                if (child.type === 'hashtag') return `#${child.value || ''}`
+                if (child.type === 'emoji') return child.value || ''
+                if (child.children) return getText(child.children)
+                return ''
               })
-              .filter(Boolean)
-              .join('\n')
+              .join('')
           }
+          return blocks
+            .map((b: any) => {
+              switch (b.type) {
+                case 'paragraph':
+                  // children에서 텍스트 추출
 
-          if (commentBlock.blocks.length > 0) {
-            const markdown = convertToMarkdown(commentBlock.blocks)
-            return `/*\n${markdown}\n  */`
-          } else {
-            // HTML 콘텐츠를 간단하게 변환 (임시)
-            return `/*\n  ${commentBlock.content}\n  */`
-          }
-        } else if (block.type === 'code') {
-          return (block as any).code || ''
+                  return getText(b.children || [])
+
+                case 'heading':
+                  const headingText = getText(b.children || [])
+                  return `${'#'.repeat(b.level || 1)} ${headingText}`
+
+                case 'list':
+                  const listItems = b.items
+                    .map((item: any, idx: number) => {
+                      const itemText = getText(item.children || [])
+                      const prefix = b.ordered ? `${idx + 1}.` : '-'
+                      return `  ${prefix} ${itemText}`
+                    })
+                    .join('\n')
+                  return listItems
+
+                case 'table':
+                  if (b.header && b.rows) {
+                    const headerRow = `  | ${b.header.map((cell: any) => getText(cell.children || [])).join(' | ')} |`
+                    const separator = `  |${b.header.map(() => '---|').join('')}`
+                    const dataRows = b.rows
+                      .map(
+                        (row: any[]) =>
+                          `  | ${row.map((cell: any) => getText(cell.children || [])).join(' | ')} |`,
+                      )
+                      .join('\n')
+                    return `${headerRow}\n${separator}\n${dataRows}`
+                  }
+                  return ''
+
+                default:
+                  return ''
+              }
+            })
+            .filter(Boolean)
+            .join('\n')
         }
 
-        return ''
-      },
-      [],
-    )
+        if (commentBlock.blocks.length > 0) {
+          const markdown = convertToMarkdown(commentBlock.blocks)
+          return `/*\n${markdown}\n  */`
+        } else {
+          // HTML 콘텐츠를 간단하게 변환 (임시)
+          return `/*\n  ${commentBlock.content}\n  */`
+        }
+      } else if (block.type === 'code') {
+        return (block as any).code || ''
+      }
+
+      return ''
+    }
 
     useEffect(() => {
       // 드래그 가능할 때만 ref 연결
@@ -389,16 +571,11 @@ export const BlogEditPage = ({
           opacity: isDragging ? 0.5 : 1,
           position: 'relative',
           cursor: isDraggable ? 'grab' : 'default',
-          border:
-            isOver && isDraggable
-              ? '2px dashed #007bff'
-              : '2px solid transparent',
-          backgroundColor:
-            isOver && isDraggable ? 'rgba(0, 123, 255, 0.15)' : 'transparent',
           borderRadius: '4px',
           margin: '8px 0',
           padding: '8px 0',
           transition: 'all 0.15s ease',
+          transform: isDragging ? 'rotate(2deg) scale(1.05)' : 'none',
           '&:hover': {
             transform: isDragging || !isDraggable ? 'none' : 'translateY(-1px)',
             boxShadow:
@@ -439,7 +616,7 @@ export const BlogEditPage = ({
     )
   }
   // 파싱된 블록들을 HTML 문자열로 변환 (TipTap용)
-  const convertBlocksToHTML = useCallback((blocks: any[]): string => {
+  const convertBlocksToHTML = (blocks: any[]): string => {
     // children 배열을 HTML로 변환하는 헬퍼 함수
     const convertChildren = (children: any[]): string => {
       if (!Array.isArray(children) || children.length === 0) {
@@ -535,176 +712,136 @@ export const BlogEditPage = ({
       })
       .filter(Boolean)
       .join('')
-  }, [])
+  }
+
+  // INSERT 메뉴 UI
+  const InsertMenu = ({ afterIndex }: { afterIndex: number }) => (
+    <div
+      css={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        width: '100%',
+        height: '28px',
+        cursor: 'pointer',
+      }}
+    >
+      <div css={{ flex: 1, height: '1px', background: '#ddd' }} />
+
+      <button
+        onClick={() => insertBlock(afterIndex, 'comment')}
+        css={{
+          padding: '2px 10px',
+          borderRadius: '20px',
+          border: '1px solid #ddd',
+          background: 'white',
+          fontSize: '13px',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            background: '#f0f0f0',
+            borderColor: '#999',
+          },
+        }}
+      >
+        + 텍스트
+      </button>
+      <button
+        onClick={() => insertBlock(afterIndex, 'code')}
+        css={{
+          padding: '2px 10px',
+          borderRadius: '20px',
+          border: '1px solid #ddd',
+          background: 'white',
+          fontSize: '13px',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            background: '#f0f0f0',
+            borderColor: '#999',
+          },
+        }}
+      >
+        + 코드
+      </button>
+      <div css={{ flex: 1, height: '1px', background: '#ddd' }} />
+    </div>
+  )
+
+  // INSERT 메뉴 영역
+  const InsertArea = ({
+    index,
+    showMenu,
+  }: {
+    index: number
+    showMenu: boolean
+  }) => (
+    <div
+      css={{
+        height: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      onMouseEnter={() => setInsertAfterIndex(index)}
+      onMouseLeave={() => setInsertAfterIndex(null)}
+    >
+      {showMenu && <InsertMenu afterIndex={index} />}
+    </div>
+  )
+
   // 편집 모드에서 외부 클릭 감지
   useEffect(() => {
     if (editingBlockIndex !== null) {
       const handleGlobalClick = (e: MouseEvent) => {
-        const editingElement = document.querySelector(
-          '[data-editing-block], [data-editing-code-block]',
-        )
-        if (editingElement && !editingElement.contains(e.target as Node)) {
-          setEditingBlockIndex(null)
+        // 편집 중인 요소들 찾기
+        const editingElement = document.querySelector('[data-editing-block]')
+        const editingCodeElement = document.querySelector('[data-code-block]')
+
+        // Monaco 에디터 요소들도 확인
+        const monacoEditor = document.querySelector('.monaco-editor')
+
+        const target = e.target as Node
+
+        // 편집 중인 요소나 Monaco 에디터 내부를 클릭한 경우 무시
+        if (
+          (editingElement && editingElement.contains(target)) ||
+          (editingCodeElement && editingCodeElement.contains(target)) ||
+          (monacoEditor && monacoEditor.contains(target))
+        ) {
+          return
         }
+
+        // 그 외의 경우 편집 모드 종료
+        setEditingBlockIndex(null)
       }
 
       document.addEventListener('click', handleGlobalClick)
       return () => document.removeEventListener('click', handleGlobalClick)
     }
   }, [editingBlockIndex])
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div>
-        {blocks.map((block, i) => {
-          if (i == 0 && block.type == 'code') {
-            console.log(`Rendering block ${i}:`, block)
-          }
-
-          const isCurrentlyEditing = editingBlockIndex === i
-
-          return (
-            <DraggableBlock
-              key={`block-${i}`}
+        {blockList.map((block, i) => (
+          <div key={`block-wrapper-${i}`}>
+            <BlockItem
               block={block}
               index={i}
-              isDraggable={!isCurrentlyEditing}
-            >
-              {block.type === 'comment' ? (
-                isCurrentlyEditing ? (
-                  <div
-                    data-editing-block
-                    css={{
-                      border: '2px solid #007bff',
-                      borderRadius: '4px',
-                      overflow: 'hidden',
-                      height: '300px',
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <TipTapEditor
-                      content={
-                        (block as CommentBlock).blocks.length > 0
-                          ? convertBlocksToHTML((block as CommentBlock).blocks)
-                          : (block as CommentBlock).content
-                      }
-                      onChange={(value: string) =>
-                        handleCommentChange(i, value)
-                      }
-                      readOnly={false}
-                    />
-                  </div>
-                ) : (
-                  <div
-                    css={{
-                      background: '#f8f9fa',
-                      border: '1px solid #e9ecef',
-                      borderRadius: '4px',
-                      padding: '12px 16px',
-                      margin: '8px 0',
-                      cursor: 'pointer',
-                      ...EMOTION_STYLES,
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setEditingBlockIndex(i)
-                    }}
-                  >
-                    {(block as CommentBlock).blocks.length > 0 ? (
-                      (block as CommentBlock).blocks.map((commentBlock, j) => (
-                        <BlockRenderer
-                          key={`comment-${i}-${j}`}
-                          block={commentBlock}
-                        />
-                      ))
-                    ) : (
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: (block as CommentBlock).content,
-                        }}
-                      />
-                    )}
-                  </div>
-                )
-              ) : block.type === 'code' ? (
-                <div
-                  data-code-block
-                  css={{
-                    border: isCurrentlyEditing
-                      ? '2px solid #007bff'
-                      : '1px solid #e9ecef',
-                    borderRadius: '4px',
-                    overflow: 'visible',
-                    minHeight: '200px',
-                    position: 'relative',
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setEditingBlockIndex(i)
-                  }}
-                >
-                  {editorLoading[i] !== false && (
-                    <div
-                      css={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'rgba(17, 17, 17, 0.9)',
-                        zIndex: 10,
-                        color: '#ddd',
-                        fontSize: '14px',
-                      }}
-                    >
-                      <div css={{ textAlign: 'center' }}>
-                        <div css={{ marginBottom: '8px' }}>⏳</div>
-                        <div>Loading Editor...</div>
-                      </div>
-                    </div>
-                  )}
-                  <CodeEditor
-                    key={`code-${i}-${isCurrentlyEditing}`}
-                    content={(() => {
-                      const codeValue = (block as any).code
-                      return codeValue
-                    })()}
-                    onChange={(value: string) => handleCodeChange(i, value)}
-                    readOnly={!isCurrentlyEditing}
-                    onMount={() => {
-                      handleEditorMount(i)
-                    }}
-                    height={(() => {
-                      const codeValue = (block as any).code
-                      // 줄 수에 따른 높이 계산: 최소 200px, 최대 600px
-                      const lineCount =
-                        (codeValue?.match(/\n/g) || []).length + 1
-                      const calculatedHeight = Math.min(
-                        Math.max(lineCount * 24 + 40, 200),
-                        600,
-                      )
-                      return `${calculatedHeight}px`
-                    })()}
-                  />
-                </div>
-              ) : (
-                <div
-                  css={{
-                    background: '#f8f9fa',
-                    border: '1px solid #e9ecef',
-                    borderRadius: '4px',
-                    padding: '12px 16px',
-                    margin: '8px 0',
-                  }}
-                >
-                  <BlockRenderer block={block} />
-                </div>
-              )}
-            </DraggableBlock>
-          )
-        })}
+              isEditing={editingBlockIndex === i}
+              onCommentChange={handleCommentChange}
+              onCodeChange={handleCodeChange}
+              onSetEditing={handleSetEditing}
+              EMOTION_STYLES={EMOTION_STYLES}
+              convertBlocksToHTML={convertBlocksToHTML}
+              DraggableBlock={DraggableBlock}
+            />
+            <InsertArea index={i} showMenu={insertAfterIndex === i} />
+          </div>
+        ))}
       </div>
     </DndProvider>
   )

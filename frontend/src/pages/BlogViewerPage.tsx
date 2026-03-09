@@ -49,7 +49,6 @@ export const BlogViewerPage = ({ blogId }: { blogId: string }) => {
   const dispatch = useDispatch()
   const title = 'test'
   const [isEditing, setIsEditing] = useState(false)
-  const [editableBlocks, setEditableBlocks] = useState<EnhancedBlockNode[]>([])
 
   // Redux에서 저장된 progress 가져오기
   const savedProgress = useSelector(
@@ -60,16 +59,12 @@ export const BlogViewerPage = ({ blogId }: { blogId: string }) => {
 
   const blocks = useMemo(() => parseFileEnhanced(testBlock2), [])
 
-  // 편집 모드 진입 시 블록 복사 (getter 문제 해결)
-  useEffect(() => {
-    if (isEditing) {
-      // JSON 직렬화로 getter 완전 제거
-      const serialized = JSON.parse(JSON.stringify(blocks))
-      setEditableBlocks(serialized)
-    } else {
-      setEditableBlocks([])
-    }
-  }, [isEditing])
+  // 편집 모드 블록 메모이제이션 (isEditing이 true일 때만 복사)
+  const editableBlocks = useMemo(() => {
+    if (!isEditing) return []
+    // JSON 직렬화로 getter 완전 제거
+    return JSON.parse(JSON.stringify(blocks))
+  }, [isEditing, blocks])
 
   // 페이지 로드 시 저장된 스크롤 위치로 즉시 복원
   useEffect(() => {
