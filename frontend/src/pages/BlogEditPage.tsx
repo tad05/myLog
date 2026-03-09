@@ -43,11 +43,16 @@ const BlockItem = memo(
             ? (block as any).code?.substring(0, 50) + '...'
             : (block as CommentBlock).content?.substring(0, 50) + '...',
         isEditing,
-        onCommentChangeRef: onCommentChange.toString().substring(0, 50) + '...',
-        onCodeChangeRef: onCodeChange.toString().substring(0, 50) + '...',
-        onSetEditingRef: onSetEditing.toString().substring(0, 50) + '...',
+        timestamp: Date.now(),
       })
-    })
+    }, [
+      index,
+      block.type,
+      isEditing,
+      onCommentChange,
+      onCodeChange,
+      onSetEditing,
+    ])
 
     // 📍 리렌더링 감지
     console.log(`📍 [BlockItem] Rendering index ${index}, type: ${block.type}`)
@@ -179,20 +184,6 @@ const BlockItem = memo(
       onCodeChangeChanged ||
       onSetEditingChanged
 
-    console.log(`📍 [BlockItem] memo 비교 index ${nextProps.index}:`, {
-      blockChanged,
-      indexChanged,
-      isEditingChanged,
-      onCommentChangeChanged,
-      onCodeChangeChanged,
-      onSetEditingChanged,
-      shouldRerender,
-      'prevProps.onCommentChange === handleCommentChange':
-        prevProps.onCommentChange.name,
-      'nextProps.onCommentChange === handleCommentChange':
-        nextProps.onCommentChange.name,
-    })
-
     // true를 반환하면 리렌더링 스킵, false를 반환하면 리렌더링
     return !shouldRerender
   },
@@ -256,8 +247,113 @@ export const BlogEditPage = ({
     null,
   )
   const [insertAfterIndex, setInsertAfterIndex] = useState<number | null>(null)
-  const [forceUpdate, setForceUpdate] = useState(0) // 강제 리렌더링용
+  const [forceUpdate, setForceUpdate] = useState(0)
 
+  // 자동 스크롤 상태
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(
+    null,
+  )
+
+  // 드래그 중 자동 스크롤 핸들러
+  const handleDragScroll = useCallback(() => {
+    let lastScrollTime = 0
+
+    return (clientY: number) => {
+      const now = Date.now()
+
+      // 60fps (16.67ms) 간격으로 스크롤 실행
+      if (now - lastScrollTime < 16) return
+
+      lastScrollTime = now
+
+      const scrollSpeed = 50
+      const topMargin = 80 // 상단 스크롤 영역
+      const extraMargin = 100 // 하단 FloatingButton 기준 여유분
+
+      // 실제 스크롤 컨테이너 찾기
+      const scrollContainer = document.querySelector(
+        '[data-scroll-container]',
+      ) as HTMLElement
+      if (!scrollContainer) {
+        console.log('❌ 스크롤 컨테이너를 찾을 수 없음')
+        return
+      }
+
+      // 스크롤 컨테이너의 화면상 위치
+      const containerRect = scrollContainer.getBoundingClientRect()
+      const containerTop = containerRect.top
+      const containerBottom = containerRect.bottom
+
+      // FloatingButton 위치 찾기
+      const floatingButton = document.querySelector(
+        'button[data-floating-button]',
+      ) as HTMLButtonElement
+      let floatingButtonTop = containerBottom // 기본값
+
+      if (floatingButton) {
+        const buttonRect = floatingButton.getBoundingClientRect()
+        floatingButtonTop = buttonRect.top
+      }
+
+      const currentScrollY = scrollContainer.scrollTop
+      const containerHeight = scrollContainer.clientHeight
+      const contentHeight = scrollContainer.scrollHeight
+      const maxScroll = Math.max(0, contentHeight - containerHeight)
+
+      // 스크롤 가능 여부
+      const canScrollUp = currentScrollY > 0
+      const canScrollDown =
+        currentScrollY < maxScroll || contentHeight > containerHeight
+
+      // 스크롤 영역 정의
+      const topScrollZone = containerTop + topMargin
+      const bottomScrollZone = floatingButtonTop - extraMargin
+
+      // 스크롤 방향 결정
+      const willScrollUp = clientY < topScrollZone && canScrollUp
+      const willScrollDown = clientY > bottomScrollZone && canScrollDown
+
+      // 시각적 피드백 업데이트
+      if (willScrollUp) {
+        setScrollDirection('up')
+      } else if (willScrollDown) {
+        setScrollDirection('down')
+      } else {
+        setScrollDirection(null)
+      }
+
+      // 실제 스크롤 실행
+      if (willScrollUp) {
+        // App.tsx에 상단 스크롤 시각적 피드백 전송
+        window.dispatchEvent(
+          new CustomEvent('dragScrollDirection', { detail: 'up' }),
+        )
+        const newScrollY = Math.max(0, currentScrollY - scrollSpeed)
+        scrollContainer.scrollTop = newScrollY
+      } else if (willScrollDown) {
+        // App.tsx에 하단 스크롤 시각적 피드백 전송
+        window.dispatchEvent(
+          new CustomEvent('dragScrollDirection', { detail: 'down' }),
+        )
+        let newScrollY
+        if (maxScroll === 0 || currentScrollY >= maxScroll) {
+          // 더 이상 스크롤할 공간이 없으면 공간 확보
+          const currentMinHeight =
+            parseInt(scrollContainer.style.minHeight) || containerHeight * 1.5
+          scrollContainer.style.minHeight = `${currentMinHeight + 200}px`
+          newScrollY = currentScrollY + scrollSpeed
+        } else {
+          newScrollY = Math.min(maxScroll, currentScrollY + scrollSpeed)
+        }
+        scrollContainer.scrollTop = newScrollY
+      } else {
+        // 스크롤이 없을 때 시각적 피드백 제거
+        window.dispatchEvent(
+          new CustomEvent('dragScrollDirection', { detail: null }),
+        )
+      }
+    }
+  }, [])() // 즉시 실행하여 클로저로 lastScrollTime 보존
   // Comment 블록 onChange 콜백 (메모이제이션)
   const handleCommentChange = useCallback(
     (blockIndex: number, htmlValue: string) => {
@@ -314,8 +410,6 @@ export const BlogEditPage = ({
 
       // React가 변경을 감지하도록 강제 리렌더링
       setForceUpdate((prev) => prev + 1)
-
-      console.log('🔄 블록 이동:', { from: dragIndex, to: hoverIndex })
     },
     [blockList],
   )
@@ -323,6 +417,8 @@ export const BlogEditPage = ({
   // 인접한 같은 타입의 블록들을 병합하는 함수
   const mergeAdjacentBlocks = useCallback(() => {
     console.log('🔗 인접 블록 병합 시작')
+
+    let merged = false
 
     for (let i = blockList.length - 1; i > 0; i--) {
       const currentBlock = blockList[i]
@@ -361,9 +457,13 @@ export const BlogEditPage = ({
         // 병합된 블록을 편집 모드로 전환
         setEditingBlockIndex(i - 1)
 
-        // 강제 리렌더링
-        setForceUpdate((prev) => prev + 1)
+        merged = true
       }
+    }
+
+    // 병합이 발생한 경우에만 리렌더링
+    if (merged) {
+      setForceUpdate((prev) => prev + 1)
     }
   }, [blockList])
 
@@ -382,7 +482,7 @@ export const BlogEditPage = ({
     const dragRef = useRef<HTMLDivElement>(null)
     const dragHandleRef = useRef<HTMLDivElement>(null)
 
-    const [{ isDragging }, drag] = useDrag({
+    const [{ isDragging: dragIsDragging }, drag] = useDrag({
       type: 'BLOCK',
       item: { index, blockType: block.type },
       canDrag: () => isDraggable,
@@ -390,6 +490,12 @@ export const BlogEditPage = ({
         isDragging: monitor.isDragging(),
       }),
       end: () => {
+        console.log('✅ [drag end] 드래그 완료')
+        setScrollDirection(null) // 스크롤 방향 초기화
+        // App.tsx에 시각적 피드백 제거 전송
+        window.dispatchEvent(
+          new CustomEvent('dragScrollDirection', { detail: null }),
+        )
         // 드래그 완료 후 인접한 같은 타입 블록들 병합
         console.log('✅ [drag end] Merging adjacent blocks')
         mergeAdjacentBlocks()
@@ -410,25 +516,40 @@ export const BlogEditPage = ({
         }
 
         const hoverBoundingRect = dragRef.current.getBoundingClientRect()
-        const hoverMiddleY =
-          (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
+        const hoverHeight = hoverBoundingRect.bottom - hoverBoundingRect.top
         const clientOffset = monitor.getClientOffset()
 
         if (!clientOffset) return
 
         const hoverClientY = clientOffset.y - hoverBoundingRect.top
 
-        // 드래그 방향에 따른 조건 체크하고 실제로 이동
-        if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
+        // 드래그 중 자동 스크롤 처리
+        requestAnimationFrame(() => {
+          handleDragScroll(clientOffset.y)
+        })
+
+        const hoverMiddle = hoverHeight / 2
+
+        // 위에서 아래로 드래그할 때: 50%를 넘어야 이동
+        if (dragIndex < hoverIndex && hoverClientY < hoverMiddle) {
           return
         }
-        if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
+        // 아래에서 위로 드래그할 때: 50% 위에 있어야 이동
+        if (dragIndex > hoverIndex && hoverClientY > hoverMiddle) {
+          return
+        }
+
+        // 같은 위치로 이동하려는 경우 방지 (이미 이동했을 수 있음)
+        if (item.index === index) {
           return
         }
 
         // 블록 위치 바꾸기 (hover 중에 실시간으로)
         moveBlock(dragIndex, hoverIndex)
         item.index = hoverIndex // 아이템 인덱스도 업데이트
+
+        // 이동 후 바로 return (같은 호버에서 중복 이동 방지)
+        return
       },
       drop: () => {
         // 이미 hover에서 이동했으므로 여기서는 별도 작업 없음
@@ -568,18 +689,21 @@ export const BlogEditPage = ({
           drag(drop(el))
         }}
         css={{
-          opacity: isDragging ? 0.5 : 1,
+          opacity: dragIsDragging ? 0.5 : 1,
           position: 'relative',
           cursor: isDraggable ? 'grab' : 'default',
           borderRadius: '4px',
           margin: '8px 0',
           padding: '8px 0',
           transition: 'all 0.15s ease',
-          transform: isDragging ? 'rotate(2deg) scale(1.05)' : 'none',
+          transform: dragIsDragging ? 'rotate(2deg) scale(1.05)' : 'none',
           '&:hover': {
-            transform: isDragging || !isDraggable ? 'none' : 'translateY(-1px)',
+            transform:
+              dragIsDragging || !isDraggable ? 'none' : 'translateY(-1px)',
             boxShadow:
-              isDragging || !isDraggable ? 'none' : '0 2px 8px rgba(0,0,0,0.1)',
+              dragIsDragging || !isDraggable
+                ? 'none'
+                : '0 2px 8px rgba(0,0,0,0.1)',
           },
           '&:active': {
             cursor: isDraggable ? 'grabbing' : 'default',

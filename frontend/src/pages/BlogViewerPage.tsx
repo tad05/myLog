@@ -254,6 +254,7 @@ export const BlogViewerPage = ({ blogId }: { blogId: string }) => {
       <FloatingButton
         text={isEditing ? '저장하기' : '수정하기'}
         onClick={onClickEdit}
+        data-floating-button
       />
     </div>
   )

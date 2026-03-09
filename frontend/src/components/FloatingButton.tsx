@@ -1,10 +1,11 @@
 export const FloatingButton = ({
   text,
   onClick,
+  ...props
 }: {
   text: string
   onClick: () => void
-}) => {
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
   return (
     <>
       {/* 그라데이션 오버레이 */}
@@ -40,6 +41,7 @@ export const FloatingButton = ({
           zIndex: 1000,
         }}
         onClick={onClick}
+        {...props}
       >
         <span
           style={{ fontSize: '18px', fontWeight: 'bold', display: 'block' }}
