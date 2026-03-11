@@ -247,12 +247,10 @@ export const BlogEditPage = ({
     null,
   )
   const [insertAfterIndex, setInsertAfterIndex] = useState<number | null>(null)
-  const [forceUpdate, setForceUpdate] = useState(0)
+  const [_, setForceUpdate] = useState(0)
 
   // 자동 스크롤 상태
-  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(
-    null,
-  )
+  const [__, setScrollDirection] = useState<'up' | 'down' | null>(null)
 
   // 드래그 중 자동 스크롤 핸들러
   const handleDragScroll = useCallback(() => {
