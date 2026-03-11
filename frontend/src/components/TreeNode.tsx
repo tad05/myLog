@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import { DropArea } from './DropArea'
 import { useDragContext } from '@/contexts/DragContext'
+import { ChevronRight, ChevronDown, Folder, FileText } from 'lucide-react'
 export const TreeNodeItem = ({
   node,
   level,
@@ -95,7 +96,7 @@ export const TreeNodeItem = ({
       setOpen((prev) => !prev)
       onToggleExpand?.(node.id)
     } else {
-      onSelect(node.blogId)
+      onSelect(node.id)
     }
   }
 
@@ -125,45 +126,46 @@ export const TreeNodeItem = ({
           }
         }}
         onClick={handleClick}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+          node.id === selectedId
+            ? 'bg-blue-50 text-blue-700'
+            : 'hover:bg-gray-100 text-gray-700'
+        } ${isDragging ? 'opacity-50' : ''} ${
+          isOver ? 'bg-blue-100 border-2 border-dashed border-blue-400' : ''
+        } ${showSiblingHover ? 'bg-blue-25 border border-blue-200' : ''}`}
         style={{
-          fontWeight: node.id === selectedId ? 'bold' : 'normal',
-          cursor: 'pointer',
-          paddingLeft: `${level * 15}px`,
-          backgroundColor: isDragging
-            ? 'rgba(0,0,0,0.1)'
-            : isOver
-              ? 'rgba(0, 123, 255, 0.2)'
-              : showSiblingHover
-                ? 'rgba(0, 123, 255, 0.05)' // 형제 노드 호버 효과 (연한 배경)
-                : 'transparent',
+          paddingLeft: `${level * 12 + 12}px`,
           opacity: isDragging ? 0.5 : 1,
-          border: isOver
-            ? '2px dashed #007bff'
-            : showSiblingHover
-              ? '1px solid rgba(0, 123, 255, 0.3)' // 형제 노드 연한 테두리
-              : '2px solid transparent',
-          borderRadius: '4px',
-          transition: 'all 0.2s ease',
         }}
       >
-        <span
-          style={{ fontSize: '18px', letterSpacing: '1px', lineHeight: '22pt' }}
-        >
-          {node.isDirectory ? (open ? '📂' : '📁') : '📄'} {node.name}
-        </span>
-        {/* {node.isDirectory && (
-          <DropArea
-            level={level + 1}
-            parentId={node.id}
-            position={index + 1}
-            onMoveNode={onMoveNode}
-            text="TreeNode2"
-          />
-        )} */}
+        {node.isDirectory ? (
+          <>
+            {isExpanded ? (
+              <ChevronDown className="w-4 h-4 flex-shrink-0" />
+            ) : (
+              <ChevronRight className="w-4 h-4 flex-shrink-0" />
+            )}
+            <Folder className="w-4 h-4 flex-shrink-0" />
+          </>
+        ) : (
+          <>
+            <div className="w-4" />
+            <FileText className="w-4 h-4 flex-shrink-0" />
+          </>
+        )}
+        <span className="text-sm truncate">{node.name}</span>
       </div>
+
       {/* 폴더가 열려있고 자식이 있을 때 */}
       {open && node.children && node.children.length > 0 && (
         <div>
+          {/* 첫번째 자식 위에 DropArea 추가 */}
+          <DropArea
+            level={level + 1}
+            parentId={node.id}
+            position={0}
+            onMoveNode={onMoveNode}
+          />
           {node.children.map((child, index) => (
             <div key={child.id}>
               <TreeNodeItem
@@ -183,7 +185,6 @@ export const TreeNodeItem = ({
                 parentId={node.id}
                 position={index + 1}
                 onMoveNode={onMoveNode}
-                text="TreeNode2"
               />
             </div>
           ))}
@@ -198,7 +199,6 @@ export const TreeNodeItem = ({
           position={0}
           message="폴더가 비어있습니다"
           onMoveNode={onMoveNode}
-          text="TreeNode1"
         />
       )}
     </div>

@@ -12,7 +12,6 @@ interface DropAreaProps {
     targetParentId: string | null,
     position: number,
   ) => void
-  text?: string
 }
 
 export const DropArea = ({
@@ -20,7 +19,6 @@ export const DropArea = ({
   parentId = null,
   position = 0,
   message = 'Drop here',
-  text = '',
   onMoveNode,
 }: DropAreaProps) => {
   const dropRef = useRef<HTMLDivElement>(null)
@@ -33,12 +31,15 @@ export const DropArea = ({
       setHoveredFolder(null)
     },
     drop: (item: { id: string; name: string; isDirectory: boolean }) => {
-      console.log('Dropped:', {
+      console.log('🎯 DropArea Drop Event:', {
         draggedItem: item,
         targetParent: parentId,
         targetLevel: level,
         position: position,
-        text,
+        dropAreaInfo: {
+          message: 'DropArea 위치',
+          parentName: parentId ? 'folder' : 'root',
+        },
       })
 
       // 실제 이동 로직 실행
@@ -68,12 +69,6 @@ export const DropArea = ({
     dragState.draggedNodePosition !== null &&
     dragState.draggedNodePosition + 1 === position
 
-  // 임시로 draggedItem이 있을 때 매우 짧은 높이로 설정하여 거의 안보이게 함
-  const isCurrentlyDragging = !!draggedItem
-
-  // 폴더 호버 상태 확인 - 현재 DropArea의 부모가 호버 중인지 확인
-  const isParentHovered = dragState.hoveredFolderId === parentId
-
   // shouldHide가 true면 DropArea를 렌더링하지 않음
   if (shouldHide) {
     return null
@@ -82,41 +77,17 @@ export const DropArea = ({
   return (
     <div
       ref={dropRef}
+      className={`transition-all duration-200 ease-out flex items-center justify-center text-xs rounded-lg ${
+        isOver
+          ? 'h-5 bg-blue-100 border-2 border-dashed border-blue-400 text-blue-600'
+          : 'h-1 bg-transparent border-transparent'
+      }`}
       style={{
-        height: isOver ? '20px' : '8px', // 기본 높이를 8px로 증가
-        marginLeft: `${level * 15}px`, // 레벨에 따른 들여쓰기
-        backgroundColor: isOver
-          ? 'rgba(0, 123, 255, 0.3)'
-          : isParentHovered
-            ? 'rgba(255, 165, 0, 0.15)' // 부모 폴더 호버 시 오렌지 계열
-            : isCurrentlyDragging
-              ? 'rgba(0, 123, 255, 0.1)' // 드래그 중일 때 약간 보이게
-              : 'rgba(200, 200, 200, 0.2)', // 평상시에도 약간 보이게
-        border: isOver
-          ? '2px dashed #007bff'
-          : isParentHovered
-            ? '1px dashed rgba(255, 165, 0, 0.6)' // 부모 호버 시 오렌지 테두리
-            : '1px dashed rgba(200, 200, 200, 0.5)',
-        borderRadius: '4px',
-        transition: 'all 0.2s ease',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '12px',
-        color: isOver
-          ? '#007bff'
-          : isParentHovered
-            ? 'rgba(255, 165, 0, 0.8)' // 부모 호버 시 오렌지 글자
-            : 'rgba(150, 150, 150, 0.8)',
-        opacity: 1, // 항상 보이도록
+        marginLeft: `${level * 12 + 12}px`,
+        marginRight: '12px',
       }}
     >
-      {isOver
-        ? message
-        : isParentHovered
-          ? '↓' // 부모 호버 시 화살표 표시
-          : '+'}{' '}
-      {/* 평상시에는 + 표시 */}
+      {isOver && <span className="font-medium">{message}</span>}
     </div>
   )
 }

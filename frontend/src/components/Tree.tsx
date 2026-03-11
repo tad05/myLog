@@ -28,7 +28,7 @@ export const Tree = ({
     <DragProvider>
       <DndProvider backend={HTML5Backend}>
         <div>
-          <DropArea position={0} onMoveNode={onMoveNode} text="Tree 1" />
+          <DropArea position={0} onMoveNode={onMoveNode} />
           {nodes.map((node, index) => (
             <div key={node.id}>
               <TreeNodeItem
@@ -42,11 +42,7 @@ export const Tree = ({
                 nodePosition={index}
                 parentId={null}
               />
-              <DropArea
-                position={index + 1}
-                onMoveNode={onMoveNode}
-                text="Tree2"
-              />
+              <DropArea position={index + 1} onMoveNode={onMoveNode} />
             </div>
           ))}
         </div>

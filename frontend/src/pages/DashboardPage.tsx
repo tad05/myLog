@@ -1,16 +1,7 @@
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
+import { Clock, Bookmark } from 'lucide-react'
 import type { RootState } from '../store'
-import { BlogList } from '@/components/BlogList'
-import { SEARCH_TYPE } from '@/mock/blogSearchOption'
-import { useState } from 'react'
-import { Text } from '@/components/shared/Text'
-import { Container } from '@/components/shared/Container'
-import { Flex } from '@/components/shared/Flex'
-import { IconArrowRight } from '@/assets/arraw'
-import { BlogGrid } from '@/components/BlogGrid'
-import { IoGrid } from 'react-icons/io5'
-import { IoList } from 'react-icons/io5'
 
 export const DashboardPage = () => {
   const navigate = useNavigate()
@@ -20,77 +11,93 @@ export const DashboardPage = () => {
   const blogScrapList = useSelector(
     (state: RootState) => state.blogScrap.scrapList,
   )
-  const [scrapViewMode, setScrapViewMode] = useState<'list' | 'grid'>('grid')
-
-  const handleMoreClick = (type: string) => {
-    navigate(`/myLog/blogs?type=${type}`)
-  }
 
   return (
-    <Flex direction="column" style={{ gap: '10px', padding: '20px' }}>
-      <Container border="1px solid var(--border)">
-        <div
-          className="pt-4 pb-2 pr-[25px] flex justify-end items-center gap-1 cursor-pointer"
-          onClick={() => handleMoreClick(SEARCH_TYPE.PROGRESS)}
-        >
-          <Text typography="t7" bold={true} color="subText">
-            더보기
-          </Text>
-          <IconArrowRight color="subText" width={16} height={14} />
-        </div>
-        {/* todo: sort이후 slice하는 로직 추가하기 */}
-        <BlogList items={blogProgressList.slice(0, 5)} />
-      </Container>
-      <Container border="1px solid var(--border)">
-        <div className="grid grid-cols-2">
-          <Flex
-            align="center"
-            style={{
-              padding: '10px 20px',
-              gap: '8px',
-            }}
-          >
-            <IoGrid
-              size="20"
-              color={scrapViewMode === 'grid' ? 'var(--green)' : undefined}
-              style={{
-                cursor: 'pointer',
-              }}
-              onClick={() => setScrapViewMode('grid')}
-            />
-            <IoList
-              size="30"
-              color={scrapViewMode === 'list' ? 'var(--green)' : undefined}
-              style={{
-                cursor: 'pointer',
-              }}
-              onClick={() => setScrapViewMode('list')}
-            />
-          </Flex>
-          <Flex
-            align="center"
-            justify="flex-end"
-            style={{
-              cursor: 'pointer',
-              paddingRight: '25px',
-              gap: '4px',
-            }}
-            onClick={() => handleMoreClick(SEARCH_TYPE.SCRAP)}
-          >
-            <Text typography="t7" bold={true} color="subText">
-              더보기
-            </Text>
-            <IconArrowRight color="subText" width={16} height={14} />
-          </Flex>
+    <div className="h-full overflow-y-auto bg-[#f8f9fa]">
+      <div className="max-w-5xl mx-auto px-8 py-12">
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-4xl mb-2 text-gray-900">Welcome back</h1>
+          <p className="text-gray-600">Continue where you left off</p>
         </div>
 
-        {/* todo: sort이후 slice하는 로직 추가하기 */}
-        {scrapViewMode === 'grid' ? (
-          <BlogGrid items={blogScrapList.slice(0, 10)} />
-        ) : (
-          <BlogList items={blogScrapList.slice(0, 10)} />
-        )}
-      </Container>
-    </Flex>
+        {/* Recently Read Section */}
+        <section className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <Clock className="w-5 h-5 text-gray-700" />
+            <h2 className="text-xl text-gray-900">Recently Read</h2>
+          </div>
+
+          <div className="space-y-3">
+            {blogProgressList.slice(0, 5).map((progress) => (
+              <div
+                key={progress.id}
+                onClick={() => navigate(`/myLog/blog/${progress.id}`)}
+                className="bg-white rounded-xl p-6 cursor-pointer transition-all hover:shadow-md border border-gray-200/50 hover:border-gray-300"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-lg text-gray-900 mb-1">
+                      {progress.title}
+                    </h3>
+                    <p className="text-sm text-gray-500">Last read recently</p>
+                  </div>
+                  {blogScrapList.some((scrap) => scrap.id === progress.id) && (
+                    <Bookmark className="w-4 h-4 text-blue-500 fill-blue-500 flex-shrink-0" />
+                  )}
+                </div>
+
+                {/* Progress Bar */}
+                <div className="space-y-1.5">
+                  <div className="relative overflow-hidden bg-gray-100 rounded-full w-full h-1.5">
+                    <div
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-transform duration-300 ease-out rounded-full"
+                      style={{ width: `${progress.percent}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {progress.percent}% complete
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            {blogProgressList.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No reading progress yet. Start reading to see your progress
+                here!
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Bookmarked Posts Section */}
+        <section>
+          <div className="flex items-center gap-2 mb-6">
+            <Bookmark className="w-5 h-5 text-gray-700" />
+            <h2 className="text-xl text-gray-900">Bookmarked</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {blogScrapList.map((scrap) => (
+              <div
+                key={scrap.id}
+                onClick={() => navigate(`/myLog/blog/${scrap.id}`)}
+                className="bg-white rounded-xl p-6 cursor-pointer transition-all hover:shadow-md border border-gray-200/50 hover:border-gray-300"
+              >
+                <h3 className="text-lg text-gray-900 mb-2">{scrap.title}</h3>
+                <p className="text-sm text-gray-500">Bookmarked</p>
+              </div>
+            ))}
+
+            {blogScrapList.length === 0 && (
+              <div className="col-span-2 text-center py-8 text-gray-500">
+                No bookmarked posts yet. Bookmark posts to see them here!
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
   )
 }
