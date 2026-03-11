@@ -7,7 +7,6 @@ import type { CSSObject } from '@emotion/react'
 import { FloatingButton } from '@/components/FloatingButton'
 import { parseFileEnhanced } from '../lib/parser'
 import testBlock2 from '../mock/testBlockRaw'
-import testBlock3 from '../mock/testBlockRaw2'
 import { BlockRenderer } from '@/components/renderer/BlockRenderer'
 import type { CommentBlock } from '../lib/parser'
 import { BlogEditPage } from './BlogEditPage'
@@ -210,9 +209,6 @@ export const BlogViewerPage = ({ blogId }: { blogId: string }) => {
       return blogData.blocks || []
     }
     console.log(blogId, 'is using default test block')
-    if (blogId !== 'blog1') {
-      return parseFileEnhanced(testBlock3)
-    }
     // 기본 testBlock2 사용
     return parseFileEnhanced(testBlock2)
   }, [blogData])
