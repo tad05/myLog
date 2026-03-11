@@ -10,12 +10,14 @@ export const CodeEditor = ({
   readOnly = false,
   onMount,
   height = '400px',
+  language = 'javascript',
 }: {
   content?: string
   onChange?: (value: string) => void
   readOnly?: boolean
   onMount?: () => void
   height?: string
+  language?: string
 }) => {
   const editorRef = useRef<any>(null)
   const monacoRef = useRef<any>(null)
@@ -209,7 +211,7 @@ export const CodeEditor = ({
     <MonacoEditor
       width="100%"
       height={height}
-      defaultLanguage="javascript"
+      defaultLanguage={language}
       defaultValue={contentRef.current || ''}
       theme="Tomorrow"
       onMount={handleMount}

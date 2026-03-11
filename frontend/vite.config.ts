@@ -15,5 +15,5 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
-  base: '/myLog/',
+  base: '/myLog',
 })
