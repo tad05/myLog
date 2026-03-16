@@ -10,7 +10,8 @@
       "@features/*": ["src/features/*"],
       "@mock/*": ["src/mock/*"],
       "@models/*": ["src/models/*"],
-      "@lib/*": ["src/lib/*"]
+      "@lib/*": ["src/lib/*"],
+      "@hooks/*": ["src/hooks/*"]
     }
   }
 }

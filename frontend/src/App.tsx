@@ -13,7 +13,8 @@ function App() {
         <Route index element={<DashboardPage />} />
         <Route path="myLog" element={<DashboardPage />} />
         <Route path="myLog/blogs" element={<BlogListPage />} />
-        <Route path="myLog/blog/:blogId" element={<BlogPage />} />
+        <Route path="myLog/projects/:projectId" element={<BlogPage />} />
+        <Route path="myLog/projects/file/:fileId" element={<BlogPage />} />
         <Route path="myLog/blog/new" element={<BlogCreatePage />} />
       </Route>
     </Routes>
