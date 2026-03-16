@@ -33,16 +33,16 @@ export function Root() {
   const isActive = (path: string) => {
     const currentPath = location.pathname
 
-    // /myLog/blogs 경로인 경우
-    if (path === '/myLog/blogs') {
-      return currentPath.startsWith('/myLog/blogs')
+    // /myLog/projects 경로인 경우
+    if (path === '/myLog/projects') {
+      return currentPath.startsWith('/myLog/projects')
     }
 
-    // /myLog 경로인 경우 (blogs가 아닌 경우만)
+    // /myLog 경로인 경우 (projects가 아닌 경우만)
     if (path === '/myLog') {
       return (
         (currentPath === '/' || currentPath === '/myLog') &&
-        !currentPath.startsWith('/myLog/blogs')
+        !currentPath.startsWith('/myLog/projects')
       )
     }
 
@@ -71,13 +71,13 @@ export function Root() {
           </Link>
 
           <Link
-            to="/myLog/blogs"
+            to="/myLog/projects"
             className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
-              isActive('/myLog/blogs')
+              isActive('/myLog/projects')
                 ? 'bg-gray-900 text-white'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
-            title="Blog List"
+            title="Projects"
           >
             <FolderOpen className="w-5 h-5" />
           </Link>

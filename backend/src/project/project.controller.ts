@@ -5,7 +5,9 @@ export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
   @Get()
-  getProjects(@Query('userId') userId?: number) {
+  getProjects(
+    @Query('userId', new ParseIntPipe({ optional: true })) userId?: number,
+  ) {
     return this.projectService.getProjects(userId);
   }
 

@@ -15,7 +15,9 @@ export const useProjects = (userId: number) => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/projects/${userId}`)
+        const res = await fetch(
+          `http://localhost:3000/projects?userId=${userId}`,
+        )
         if (!res.ok) {
           throw new Error('프로젝트 조회 실패')
         }
