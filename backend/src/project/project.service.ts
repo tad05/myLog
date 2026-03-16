@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ProjectService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getUserProjects(userId: number) {
+  async getProjects(userId: number) {
     return this.prisma.project.findMany({
       where: {
         userId: userId,
@@ -18,22 +18,7 @@ export class ProjectService {
       where: {
         projectId: projectId,
       },
-      orderBy: {
-        path: 'asc',
-      },
-    });
-  }
-
-  async getBlogByFileId(fileId: number) {
-    return this.prisma.blog.findUnique({
-      where: { fileId: fileId },
-      include: {
-        file: {
-          include: {
-            project: true,
-          },
-        },
-      },
+      orderBy: [{ isDirectory: 'desc' }, { path: 'asc' }],
     });
   }
 }
