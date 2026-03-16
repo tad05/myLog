@@ -8,7 +8,7 @@ import { Text } from '@shared/Text'
 export const BlogGridItem = ({ id, title, percent }: BlogInfo) => {
   const navigate = useNavigate()
   const handleClick = () => {
-    navigate('/myLog/blog/' + id)
+    navigate(`/myLog/file/${id}`)
   }
   return (
     <>
@@ -16,11 +16,11 @@ export const BlogGridItem = ({ id, title, percent }: BlogInfo) => {
         onClick={handleClick}
         style={css`
           &:hover {
-                box-shadow: 0px 0px 40px 5px var(--hovered-item);
-                cursor: pointer;
-                background-color: var(--action);
-              }
-          `}
+            box-shadow: 0px 0px 40px 5px var(--hovered-item);
+            cursor: pointer;
+            background-color: var(--action);
+          }
+        `}
         contents={
           <div
             css={css`
@@ -28,7 +28,7 @@ export const BlogGridItem = ({ id, title, percent }: BlogInfo) => {
               flex-direction: column;
               width: 100%;
               height: 100%;
-              padding : 10px;
+              padding: 10px;
             `}
           >
             <div

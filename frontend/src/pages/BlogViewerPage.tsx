@@ -7,7 +7,7 @@ import type { CSSObject } from '@emotion/react'
 import { BlockRenderer } from '@/components/renderer/BlockRenderer'
 import type { CommentBlock } from '../lib/parser'
 import { BlogEditPage } from './BlogEditPage'
-import { useFileBlog } from '@/hooks/useProjectFiles'
+import { useFileBlog } from '@/hooks/useFile'
 /** @jsxImportSource @emotion/react */
 
 const EMOTION_STYLES: CSSObject = {
@@ -47,7 +47,7 @@ const EMOTION_STYLES: CSSObject = {
 export const BlogViewerPage = ({ fileId }: { fileId: number }) => {
   const dispatch = useDispatch()
 
-  const { serverBlog } = useFileBlog(fileId)
+  const { data: serverBlog } = useFileBlog(fileId)
   const [isEditing, setIsEditing] = useState(false)
 
   // Redux에서 저장된 progress 가져오기

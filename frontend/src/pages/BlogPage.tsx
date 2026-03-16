@@ -3,7 +3,8 @@ import type { FlatNode, TreeNode } from '@/models/fileNode'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BlogViewerPage } from './BlogViewerPage'
 import { Tree } from '@/components/Tree'
-import { useProjectFiles, useFileBlog } from '@/hooks/useProjectFiles'
+import { useProjectFiles } from '@/hooks/useProject'
+import { useFileBlog } from '@/hooks/useFile'
 
 export const BlogPage = () => {
   const navigate = useNavigate()
@@ -23,10 +24,10 @@ export const BlogPage = () => {
   const isProjectMode = !!projectId
   const currentId = projectId || fileId || ''
 
-  const { serverBlog } = useFileBlog(fileId)
+  const { data: serverBlog } = useFileBlog(fileId)
   const resolvedProjectId = projectId ?? serverBlog?.file.projectId
 
-  const { files } = useProjectFiles(resolvedProjectId)
+  const { data: files } = useProjectFiles(resolvedProjectId)
 
   const nodeMap = useMemo(() => {
     const map = new Map<number, FlatNode>()
@@ -45,7 +46,7 @@ export const BlogPage = () => {
         '📍 프로젝트에서 파일 선택:',
         `/myLog/projects/file/${node.id}`,
       )
-      navigate(`/myLog/files/${node.id}/blog`)
+      navigate(`/myLog/files/${node.id}`)
     }
   }
 

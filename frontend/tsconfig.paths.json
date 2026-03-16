@@ -11,7 +11,8 @@
       "@mock/*": ["src/mock/*"],
       "@models/*": ["src/models/*"],
       "@lib/*": ["src/lib/*"],
-      "@hooks/*": ["src/hooks/*"]
+      "@hooks/*": ["src/hooks/*"],
+      "@/queries/*": ["src/queries/*"]
     }
   }
 }

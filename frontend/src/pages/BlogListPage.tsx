@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { FolderOpen, ChevronRight, FileText, Plus } from 'lucide-react'
-import { useProjects } from '@/hooks/useProjectFiles'
+import { useProjects } from '@/hooks/useProject'
 
 export const BlogListPage = () => {
   const navigate = useNavigate()
@@ -13,7 +13,7 @@ export const BlogListPage = () => {
     nickname: 'User',
     createdAt: '2023-01-01',
   }
-  const projects = useProjects(user.id)
+  const { data: projects } = useProjects(user.id)
   const onClickCreate = () => {
     navigate('/myLog/blog/new')
   }
@@ -38,7 +38,7 @@ export const BlogListPage = () => {
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {projects.map((project) => (
+          {projects?.map((project: any) => (
             <div
               key={project.id}
               onClick={() => handleProjectClick(project.id)}

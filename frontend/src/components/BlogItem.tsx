@@ -12,7 +12,7 @@ export const BlogItem = ({ id, title, percent }: BlogInfo) => {
   const navigate = useNavigate()
 
   const handleClick = () => {
-    navigate('/myLog/blog/' + id)
+    navigate('/myLog/file/' + id)
   }
   return (
     <ListRow

@@ -4,20 +4,28 @@ import { DashboardPage } from './pages/DashboardPage'
 import { BlogListPage } from './pages/BlogListPage'
 import { BlogPage } from './pages/BlogPage'
 import { BlogCreatePage } from './pages/BlogCreatePage'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 /** @jsxImportSource @emotion/react */
+
+const queryClient = new QueryClient()
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Root />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="myLog" element={<DashboardPage />} />
-        <Route path="myLog/projects" element={<BlogListPage />} />
-        <Route path="myLog/projects/:projectId/files" element={<BlogPage />} />
-        <Route path="myLog/files/:fileId/blog" element={<BlogPage />} />
-        <Route path="myLog/blog/new" element={<BlogCreatePage />} />
-      </Route>
-    </Routes>
+    <QueryClientProvider client={queryClient}>
+      <Routes>
+        <Route path="/" element={<Root />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="myLog" element={<DashboardPage />} />
+          <Route path="myLog/projects" element={<BlogListPage />} />
+          <Route
+            path="myLog/projects/:projectId/files"
+            element={<BlogPage />}
+          />
+          <Route path="myLog/files/:fileId" element={<BlogPage />} />
+          <Route path="myLog/blog/new" element={<BlogCreatePage />} />
+        </Route>
+      </Routes>
+    </QueryClientProvider>
   )
 }
 
