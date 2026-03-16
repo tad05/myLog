@@ -1,42 +1,57 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FlatNode, TreeNode } from '@/models/fileNode'
-import { mockFlatNodes } from '@/mock/fileNode'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BlogViewerPage } from './BlogViewerPage'
 import { Tree } from '@/components/Tree'
+import { useProjectFiles, useFileBlog } from '@/hooks/useProjectFiles'
 
 export const BlogPage = () => {
   const navigate = useNavigate()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedNode, setSelectedNode] = useState<FlatNode | null>(null)
   const [flatNodes, setFlatNodes] = useState<FlatNode[]>([])
-  const [expandedIds, setExpandedIds] = useState<string[]>([])
-  const { blogId = '' } = useParams<{ blogId: string }>()
+  const [expandedIds, setExpandedIds] = useState<number[]>([])
+  const { fileId: fileIdParam, projectId: projectIdParam } = useParams<{
+    fileId?: string
+    projectId?: string
+  }>()
+
+  // URL 파라미터를 number로 변환
+  const fileId = fileIdParam ? Number(fileIdParam) : undefined
+  const projectId = projectIdParam ? Number(projectIdParam) : undefined
+
+  // 현재 모드 판별 (프로젝트 모드 vs 블로그 모드)
+  const isProjectMode = !!projectId
+  const currentId = projectId || fileId || ''
+
+  const { serverBlog } = useFileBlog(fileId)
+  const resolvedProjectId = projectId ?? serverBlog?.file.projectId
+
+  const { files } = useProjectFiles(resolvedProjectId)
 
   const nodeMap = useMemo(() => {
-    const map = new Map<string, FlatNode>()
+    const map = new Map<number, FlatNode>()
     flatNodes.forEach((n) => map.set(n.id, n))
     return map
   }, [flatNodes])
 
   const treeMap = useMemo(() => buildTree(flatNodes), [flatNodes])
 
-  const handleSelectNode = (nodeId: string) => {
+  const handleSelectNode = (nodeId: number) => {
     const node = nodeMap.get(nodeId)
-    console.log('🖱️ handleSelectNode 호출:', { nodeId, node })
+    console.log('🖱️ handleSelectNode 호출:', { nodeId, node, isProjectMode })
     if (node && !node.isDirectory) {
-      setSelectedId(nodeId)
       setSelectedNode(node)
-      if (node.blogId) {
-        console.log('📍 네비게이션 호출:', `/myLog/blog/${node.blogId}`)
-        navigate(`/myLog/blog/${node.blogId}`)
-      }
+      console.log(
+        '📍 프로젝트에서 파일 선택:',
+        `/myLog/projects/file/${node.id}`,
+      )
+      navigate(`/myLog/files/${node.id}/blog`)
     }
   }
 
   const handleMoveNode = (
-    draggedNodeId: string,
-    targetParentId: string | null,
+    draggedNodeId: number,
+    targetParentId: number | null,
     position: number,
   ) => {
     console.log('🚀 handleMoveNode 시작:', {
@@ -200,8 +215,8 @@ export const BlogPage = () => {
 
   // 하위 노드인지 확인하는 함수
   const isDescendant = (
-    potentialDescendantId: string,
-    ancestorId: string,
+    potentialDescendantId: number,
+    ancestorId: number,
     nodes: FlatNode[],
   ): boolean => {
     const nodeMap = new Map(nodes.map((node) => [node.id, node]))
@@ -217,7 +232,7 @@ export const BlogPage = () => {
     return false
   }
 
-  const handleToggleExpand = (nodeId: string) => {
+  const handleToggleExpand = (nodeId: number) => {
     const isExpanded = expandedIds.includes(nodeId)
     if (isExpanded) {
       setExpandedIds(expandedIds.filter((id) => id !== nodeId))
@@ -226,10 +241,10 @@ export const BlogPage = () => {
     }
   }
 
-  // blogId로부터 해당 노드까지의 경로상의 모든 부모 노드들을 펼치는 함수
-  const expandPathToBlog = (targetBlogId: string) => {
+  // fileId로부터 해당 노드까지의 경로상의 모든 부모 노드들을 펼치는 함수
+  const expandPathToFile = (targetFileId: number) => {
     const targetNode = flatNodes.find(
-      (node) => node.isDirectory === false && node.blogId === targetBlogId,
+      (node: any) => node.isDirectory === false && node.id === targetFileId,
     )
     if (!targetNode) return
 
@@ -244,135 +259,85 @@ export const BlogPage = () => {
   }
 
   useEffect(() => {
-    // 프로젝트 ID인지 확인
-    if (blogId && blogId.startsWith('project-')) {
-      const storedProjectData = localStorage.getItem(`project_${blogId}`)
+    console.log('📁 프로젝트 파일 데이터 로드:', { files })
+    // 프로젝트 모드인 경우 프로젝트 파일 데이터 로드
+    if (isProjectMode && projectId && files) {
+      // FileItem을 FlatNode로 변환
+      // const convertedNodes: FlatNode[] = files.map((file) => {
+      //   // path를 기반으로 parentId 계산
+      //   const pathParts = file.path.split('/').filter(Boolean)
+      //   let parentId: number | null = null
 
-      console.log('🔍 프로젝트 ID 감지:', blogId, '→', storedProjectData)
-      if (storedProjectData) {
-        try {
-          const projectData = JSON.parse(storedProjectData)
-          console.log('📚 프로젝트 데이터 로드:', projectData)
+      //   // 루트 디렉토리가 아닌 경우 부모 찾기
+      //   if (pathParts.length > 1) {
+      //     const parentPath = '/' + pathParts.slice(0, -1).join('/')
+      //     const parentFile = files.find(
+      //       (f) => f.path === parentPath && f.isDirectory,
+      //     )
+      //     if (parentFile) {
+      //       parentId = parentFile.id.toString()
+      //     }
+      //   }
 
-          // 프로젝트 데이터를 FlatNode 형식으로 변환
-          const newFlatNodes: FlatNode[] = [
-            {
-              id: 'uploaded-project',
-              name: projectData.title || 'Uploaded Project',
-              path: '/uploaded-project',
-              isDirectory: true,
-              parentId: null,
-            },
-          ]
-
-          // 업로드된 파일들을 각각 노드로 추가
-          if (
-            projectData.uploadedFiles &&
-            Array.isArray(projectData.uploadedFiles)
-          ) {
-            projectData.uploadedFiles.forEach((file: any, index: number) => {
-              newFlatNodes.push({
-                id: `file-${index}`,
-                name: file.name,
-                path: `/uploaded-project/${file.name}`,
-                isDirectory: false,
-                blogId: file.blogId, // 각 파일의 개별 블로그ID 사용
-                parentId: 'uploaded-project',
-              })
-            })
-          }
-
-          setFlatNodes(newFlatNodes)
-          // 프로젝트 폴더를 기본적으로 펼쳐둠
-          setExpandedIds(['uploaded-project'])
-          return
-        } catch (error) {
-          console.error('프로젝트 데이터 파싱 오류:', error)
-        }
-      }
+      //   if (file.isDirectory) {
+      //     return {
+      //       id: file.id.toString(),
+      //       name: file.name,
+      //       path: file.path,
+      //       isDirectory: true,
+      //       parentId,
+      //     }
+      //   } else {
+      //     return {
+      //       id: file.id.toString(),
+      //       name: file.name,
+      //       path: file.path,
+      //       isDirectory: false,
+      //       parentId,
+      //       blogId: file.id, // 파일 ID를 blogId로 사용
+      //     }
+      //   }
+      // })
+      setFlatNodes(files)
     }
-    // 개별 블로그 ID인지 확인 (기존 업로드 파일들)
-    else if (blogId && blogId.startsWith('blog-')) {
-      const storedBlogData = localStorage.getItem(`blog_${blogId}`)
+  }, [files, isProjectMode, projectId])
 
-      console.log('🔍 새 블로그 ID 감지:', blogId, '→', storedBlogData)
-      if (storedBlogData) {
-        try {
-          const blogData = JSON.parse(storedBlogData)
-          console.log('📚 새로 생성된 블로그 데이터 로드:', blogData)
-
-          // 기존 방식 유지 (하위 호환성)
-          const newFlatNodes: FlatNode[] = [
-            {
-              id: 'uploaded-project',
-              name: blogData.title || 'Uploaded Project',
-              path: '/uploaded-project',
-              isDirectory: true,
-              parentId: null,
-            },
-          ]
-
-          // 업로드된 파일들을 각각 노드로 추가
-          if (blogData.uploadedFiles && Array.isArray(blogData.uploadedFiles)) {
-            blogData.uploadedFiles.forEach((file: any, index: number) => {
-              newFlatNodes.push({
-                id: `file-${index}`,
-                name: file.name,
-                path: `/uploaded-project/${file.name}`,
-                isDirectory: false,
-                blogId: blogId,
-                parentId: 'uploaded-project',
-              })
-            })
-          }
-
-          setFlatNodes(newFlatNodes)
-          // 기존 방식도 프로젝트 폴더를 기본적으로 펼쳐둠
-          setExpandedIds(['uploaded-project'])
-          return
-        } catch (error) {
-          console.error('블로그 데이터 파싱 오류:', error)
-        }
-      }
-    }
-
-    // 기본 mockFlatNodes 사용
-    const flatNodes = mockFlatNodes
-    setFlatNodes(flatNodes)
-  }, [blogId])
   useEffect(() => {
-    if (flatNodes.length > 0 && blogId !== '' && blogId !== undefined) {
-      // 프로젝트 ID인 경우 프로젝트 폴더만 펼치기
-      if (blogId.startsWith('project-')) {
-        setExpandedIds(['uploaded-project'])
-      } else {
-        // flatNodes가 설정된 후에 blogId에 해당하는 노드를 찾아서 트리를 펼치고 선택
-        expandPathToBlog(blogId)
+    if (flatNodes.length > 0 && currentId) {
+      // 프로젝트 모드인 경우 루트 폴더만 펼치기
+      if (isProjectMode) {
+        const rootNode = flatNodes.find(
+          (node) => node.isDirectory && node.parentId === null,
+        )
+        if (rootNode) {
+          setExpandedIds([rootNode.id])
+        }
+      } else if (fileId) {
+        // 블로그 모드인 경우 해당 블로그 경로 펼치기
+        expandPathToFile(fileId)
       }
     }
-  }, [flatNodes, blogId, nodeMap])
+  }, [flatNodes, currentId, isProjectMode, fileId, nodeMap])
 
   useEffect(() => {
     if (flatNodes.length === 0) return
 
-    // URL에서 blogId 파라미터 가져오기
-    const currentBlogId = blogId
-    console.log('🔄 URL blogId 변경 감지:', {
-      currentBlogId,
-      flatNodesLength: flatNodes.length,
-    })
-    if (currentBlogId && !currentBlogId.startsWith('project-')) {
-      // 프로젝트 ID가 아닌 개별 블로그 ID인 경우에만 노드 선택
+    // 블로그 모드에서만 자동 노드 선택
+    if (!isProjectMode && fileId) {
+      console.log('🔄 블로그 모드 - URL fileId 변경 감지:', {
+        fileId,
+        flatNodesLength: flatNodes.length,
+      })
+      ///꼭꼭 수정필요
       const targetNode = flatNodes.find(
-        (node) => !node.isDirectory && node.blogId === currentBlogId,
+        (node) => !node.isDirectory && node.id === fileId,
       )
       console.log('🎯 타겟 노드 찾기 결과:', { targetNode })
       if (targetNode) {
-        handleSelectNode(targetNode.id)
-        setSelectedId(targetNode.id)
+        setSelectedNode(targetNode)
       }
     }
-  }, [blogId, flatNodes])
+  }, [fileId, flatNodes, isProjectMode])
 
   return (
     <div className="flex h-full bg-[#f8f9fa]">
@@ -388,7 +353,7 @@ export const BlogPage = () => {
         <div className="p-2">
           <Tree
             nodes={treeMap}
-            selectedId={selectedId}
+            selectedId={selectedNode?.id ?? null}
             onSelect={handleSelectNode}
             expandedIds={expandedIds}
             onToggleExpand={handleToggleExpand}
@@ -399,12 +364,11 @@ export const BlogPage = () => {
 
       {/* Editor/Viewer Area */}
       <div className="flex-1 flex flex-col h-full">
-        {!selectedNode?.isDirectory && selectedNode?.blogId ? (
-          <BlogViewerPage blogId={selectedNode.blogId} />
+        {!isProjectMode && selectedNode && serverBlog ? (
+          <BlogViewerPage fileId={serverBlog.file.id} />
         ) : (
           <div className="h-full flex items-center justify-center">
-            {blogId &&
-            (blogId.startsWith('project-') || blogId.startsWith('blog-')) ? (
+            {isProjectMode ? (
               <div className="text-center">
                 <p className="text-gray-500 mb-2">프로젝트가 로드되었습니다</p>
                 <p className="text-sm text-gray-400">
@@ -422,8 +386,9 @@ export const BlogPage = () => {
 }
 
 export function buildTree(nodes: FlatNode[]): TreeNode[] {
-  const nodeMap = new Map<string, TreeNode>()
+  const nodeMap = new Map<number, TreeNode>()
   const roots: TreeNode[] = []
+  console.log('📂 buildTree 호출:', { nodes, nodesLength: nodes.length })
 
   // 1. 모든 노드를 map에 등록
   for (const node of nodes) {
@@ -432,30 +397,41 @@ export function buildTree(nodes: FlatNode[]): TreeNode[] {
       name: node.name,
       path: node.path,
       isDirectory: node.isDirectory,
-      blogId: node.isDirectory ? '' : node.blogId,
+      parentId: node.parentId,
+      // blogId: node.isDirectory ? '' : node.blogId,
       ...(node.isDirectory ? { children: [] } : {}),
     })
   }
 
+  console.log('🗂️ 생성된 nodeMap:', Array.from(nodeMap.entries()))
+
   // 2. 부모-자식 연결
   for (const node of nodes) {
     const treeNode = nodeMap.get(node.id)!
+    console.log(treeNode)
     if (node.parentId === null) {
+      console.log('📁 루트 노드 추가:', node.name)
       roots.push(treeNode)
     } else {
       const parent = nodeMap.get(node.parentId)
       if (parent?.children) {
+        console.log(`🔗 자식 연결: ${node.name} -> 부모: ${parent.name}`)
         parent.children.push(treeNode)
+      } else {
+        console.log(
+          `❌ 부모를 찾을 수 없음: ${node.name}, parentId: ${node.parentId}`,
+        )
       }
     }
   }
 
+  console.log('🌳 최종 트리 구조:', roots)
   return roots
 }
 
 function buildBreadcrumb(
-  currentId: string,
-  nodeMap: Map<string, FlatNode>,
+  currentId: number,
+  nodeMap: Map<number, FlatNode>,
 ): FlatNode[] {
   const path: FlatNode[] = []
   let cursor: FlatNode | undefined = nodeMap.get(currentId)

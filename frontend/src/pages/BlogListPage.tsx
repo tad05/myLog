@@ -1,53 +1,30 @@
-import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FolderOpen, ChevronRight, FileText, Plus } from 'lucide-react'
-import type { RootState } from '../store'
-import { FloatingButton } from '@/components/FloatingButton'
+import { useProjects } from '@/hooks/useProjectFiles'
 
 export const BlogListPage = () => {
   const navigate = useNavigate()
-  const [selectedProject, setSelectedProject] = useState<string | null>(null)
-
-  const blogProgressList = useSelector(
-    (state: RootState) => state.readingProgress.progressList,
-  )
-  const blogScrapList = useSelector(
-    (state: RootState) => state.blogScrap.scrapList,
-  )
-
+  const [selectedProject, setSelectedProject] = useState<number | null>(null)
+  // const user = useSelector((state: RootState) => state.user.currentUser)
+  const user = {
+    id: 1,
+    email: 'user@example.com',
+    nickname: 'User',
+    createdAt: '2023-01-01',
+  }
+  const projects = useProjects(user.id)
   const onClickCreate = () => {
     navigate('/myLog/blog/new')
   }
-
-  // Mock projects based on existing data
-  const mockProjects = [
-    {
-      id: 'personal',
-      name: 'Personal Blog',
-      description: 'My personal thoughts and writings',
-      files: blogProgressList.slice(0, 3),
-    },
-    {
-      id: 'tech',
-      name: 'Tech Articles',
-      description: 'Technical tutorials and guides',
-      files: blogProgressList.slice(3, 6),
-    },
-    {
-      id: 'bookmarks',
-      name: 'Bookmarked Posts',
-      description: 'My favorite saved articles',
-      files: blogScrapList,
-    },
-  ]
-
-  const handleProjectClick = (projectId: string) => {
-    setSelectedProject(projectId)
-    const project = mockProjects.find((p) => p.id === projectId)
-    if (project?.files && project.files.length > 0) {
-      navigate(`/myLog/blog/${project.files[0].id}`)
+  useEffect(() => {
+    if (!user) {
+      navigate('/login')
     }
+  }, [user, navigate])
+
+  const handleProjectClick = (projectId: number) => {
+    navigate(`/myLog/projects/${projectId}/files`)
   }
 
   return (
@@ -61,7 +38,7 @@ export const BlogListPage = () => {
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {mockProjects.map((project) => (
+          {projects.map((project) => (
             <div
               key={project.id}
               onClick={() => handleProjectClick(project.id)}
@@ -77,7 +54,7 @@ export const BlogListPage = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg text-gray-900 mb-1 truncate">
-                    {project.name}
+                    {project.title}
                   </h3>
                   <p className="text-sm text-gray-500 line-clamp-2">
                     {project.description}
@@ -88,7 +65,7 @@ export const BlogListPage = () => {
               {/* File count */}
               <div className="flex items-center gap-2 text-sm text-gray-600 pt-4 border-t border-gray-100">
                 <FileText className="w-4 h-4" />
-                <span>{project.files.length} files</span>
+                <span>{project.fileCount} files</span>
                 <ChevronRight className="w-4 h-4 ml-auto" />
               </div>
             </div>

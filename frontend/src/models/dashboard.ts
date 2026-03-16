@@ -1,5 +1,5 @@
 export interface BlogInfo {
-  id: string
+  id: number
   title: string
   percent?: number
 }

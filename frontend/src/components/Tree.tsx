@@ -14,16 +14,18 @@ export const Tree = ({
   onMoveNode,
 }: {
   nodes: TreeNode[]
-  selectedId: string | null
-  onSelect: (id: string) => void
-  expandedIds?: string[]
-  onToggleExpand?: (nodeId: string) => void
+  selectedId: number | null
+  onSelect: (id: number) => void
+  expandedIds?: number[]
+  onToggleExpand?: (nodeId: number) => void
   onMoveNode?: (
-    draggedNodeId: string,
-    targetParentId: string | null,
+    draggedNodeId: number,
+    targetParentId: number | null,
     position: number,
   ) => void
 }) => {
+  console.log('🌳 Tree 컴포넌트 렌더링:', { nodes, nodesLength: nodes.length })
+
   return (
     <DragProvider>
       <DndProvider backend={HTML5Backend}>

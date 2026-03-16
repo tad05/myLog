@@ -4,12 +4,12 @@ import { useDragContext } from '@/contexts/DragContext'
 
 interface DropAreaProps {
   level?: number
-  parentId?: string | null
+  parentId?: number | null
   position?: number
   message?: string
   onMoveNode?: (
-    draggedNodeId: string,
-    targetParentId: string | null,
+    draggedNodeId: number,
+    targetParentId: number | null,
     position: number,
   ) => void
 }
@@ -24,13 +24,13 @@ export const DropArea = ({
   const dropRef = useRef<HTMLDivElement>(null)
   const { dragState, setHoveredFolder } = useDragContext()
 
-  const [{ isOver, draggedItem }, drop] = useDrop({
+  const [{ isOver }, drop] = useDrop({
     accept: 'TREE_NODE',
     hover: () => {
       // DropArea 위에 호버 시 부모 폴더 호버 상태 해제
       setHoveredFolder(null)
     },
-    drop: (item: { id: string; name: string; isDirectory: boolean }) => {
+    drop: (item: { id: number; name: string; isDirectory: boolean }) => {
       console.log('🎯 DropArea Drop Event:', {
         draggedItem: item,
         targetParent: parentId,

@@ -12,9 +12,9 @@ function App() {
       <Route path="/" element={<Root />}>
         <Route index element={<DashboardPage />} />
         <Route path="myLog" element={<DashboardPage />} />
-        <Route path="myLog/blogs" element={<BlogListPage />} />
-        <Route path="myLog/projects/:projectId" element={<BlogPage />} />
-        <Route path="myLog/projects/file/:fileId" element={<BlogPage />} />
+        <Route path="myLog/projects" element={<BlogListPage />} />
+        <Route path="myLog/projects/:projectId/files" element={<BlogPage />} />
+        <Route path="myLog/files/:fileId/blog" element={<BlogPage />} />
         <Route path="myLog/blog/new" element={<BlogCreatePage />} />
       </Route>
     </Routes>

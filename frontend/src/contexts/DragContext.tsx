@@ -6,21 +6,21 @@ import React, {
 } from 'react'
 
 interface DragState {
-  draggedNodeId: string | null
-  draggedNodeParentId: string | null
+  draggedNodeId: number | null
+  draggedNodeParentId: number | null
   draggedNodePosition: number | null
-  hoveredFolderId: string | null // 현재 호버 중인 폴더
+  hoveredFolderId: number | null // 현재 호버 중인 폴더
 }
 
 interface DragContextType {
   dragState: DragState
   setDraggedNode: (
-    nodeId: string,
-    parentId: string | null,
+    nodeId: number,
+    parentId: number | null,
     position: number,
   ) => void
   clearDraggedNode: () => void
-  setHoveredFolder: (folderId: string | null) => void
+  setHoveredFolder: (folderId: number | null) => void
 }
 
 const DragContext = createContext<DragContextType | undefined>(undefined)
@@ -36,8 +36,8 @@ export const DragProvider: React.FC<{ children: ReactNode }> = ({
   })
 
   const setDraggedNode = (
-    nodeId: string,
-    parentId: string | null,
+    nodeId: number,
+    parentId: number | null,
     position: number,
   ) => {
     setDragState({
@@ -57,7 +57,7 @@ export const DragProvider: React.FC<{ children: ReactNode }> = ({
     })
   }
 
-  const setHoveredFolder = (folderId: string | null) => {
+  const setHoveredFolder = (folderId: number | null) => {
     setDragState((prev) => ({
       ...prev,
       hoveredFolderId: folderId,

@@ -1,23 +1,15 @@
-type BaseNode = {
-  id: string
+export type FlatNode = {
+  id: number
   name: string
   path: string
-  parentId: string | null
-}
-
-export type FlatNode =
-  | (BaseNode & {
-      isDirectory: true
-    })
-  | (BaseNode & {
-      isDirectory: false
-      blogId: string
-    })
-export type TreeNode = {
-  id: string
-  name: string
-  path: string
+  parentId: number | null
   isDirectory: boolean
-  blogId: string
+}
+export type TreeNode = {
+  id: number
+  name: string
+  path: string
+  parentId: number | null
+  isDirectory: boolean
   children?: TreeNode[]
 }

@@ -1,4 +1,4 @@
-import { use, useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export interface Project {
   id: number
@@ -101,7 +101,7 @@ export const useFileBlog = (fileId?: number | null) => {
     const fetchBlog = async () => {
       try {
         console.log(`Fetching Blog for fileId: ${fileId}`)
-        const res = await fetch(`http://localhost:3000/projects/file/${fileId}`)
+        const res = await fetch(`http://localhost:3000/files/${fileId}/blog`)
         if (!res.ok) {
           throw new Error('블로그 파일 조회 실패')
         }

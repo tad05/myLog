@@ -4,12 +4,10 @@ import { updateProgress } from '../features/readingProgressSlice'
 import { Edit3, Save, X } from 'lucide-react'
 import type { RootState } from '@/store'
 import type { CSSObject } from '@emotion/react'
-import { FloatingButton } from '@/components/FloatingButton'
-import { parseFileEnhanced } from '../lib/parser'
-import testBlock2 from '../mock/testBlockRaw'
 import { BlockRenderer } from '@/components/renderer/BlockRenderer'
 import type { CommentBlock } from '../lib/parser'
 import { BlogEditPage } from './BlogEditPage'
+import { useFileBlog } from '@/hooks/useProjectFiles'
 /** @jsxImportSource @emotion/react */
 
 const EMOTION_STYLES: CSSObject = {
@@ -46,174 +44,26 @@ const EMOTION_STYLES: CSSObject = {
   } as CSSObject,
 }
 
-export const BlogViewerPage = ({ blogId }: { blogId: string }) => {
+export const BlogViewerPage = ({ fileId }: { fileId: number }) => {
   const dispatch = useDispatch()
-  const [blogData, setBlogData] = useState<any>(null)
-  const [isEditing, setIsEditing] = useState(false)
 
-  // 새로운 블로그 ID인지 확인하고 데이터 로드
-  useEffect(() => {
-    if (blogId.startsWith('blog-')) {
-      // localStorage에서 업로드된 블로그 데이터 가져오기
-      const storedData = localStorage.getItem(`blog_${blogId}`)
-      if (storedData) {
-        try {
-          const parsedData = JSON.parse(storedData)
-          setBlogData(parsedData)
-        } catch (error) {
-          console.error('Error parsing stored blog data:', error)
-          setBlogData(null)
-        }
-      }
-    } else {
-      setBlogData(null)
-      // setBlogData(blogId)
-    }
-  }, [blogId])
+  const { serverBlog } = useFileBlog(fileId)
+  const [isEditing, setIsEditing] = useState(false)
 
   // Redux에서 저장된 progress 가져오기
   const savedProgress = useSelector(
     (state: RootState) =>
-      state.readingProgress.progressList.find((p) => p.id === blogId)
+      state.readingProgress.progressList.find((p) => p.id === fileId)
         ?.percent || 0,
   )
 
   const blocks = useMemo(() => {
-    console.log('blogData:', blogData)
-    // 개별 파일의 블로그 ID인 경우 (blog-xxxxx-0, blog-xxxxx-1 등)
-    if (blogData && blogData.fileName) {
-      // 이미 파싱된 블록이 있으면 사용
-      if (blogData.blocks) {
-        return blogData.blocks
-      }
+    if (serverBlog?.parsedBlocks) {
+      return serverBlog.parsedBlocks
     }
-    // 기존 업로드 방식 (하위 호환성) - 여러 파일을 합쳐서 표시
-    else if (blogData?.uploadedFiles) {
-      // 파일 수가 많으면 첫 3개만 파싱 (성능 최적화)
-      const filesToParse = blogData.uploadedFiles.slice(0, 3)
+  }, [serverBlog])
 
-      const parseUploadedFiles = async () => {
-        const allParsedBlocks: any[] = []
-
-        for (const fileData of filesToParse) {
-          try {
-            // 파일 내용이 이미 저장되어 있으므로 직접 사용
-            const text = fileData.content
-            if (!text) {
-              console.warn(`No content for file ${fileData.name}`)
-              continue
-            }
-
-            // 파일 내용이 너무 크면 일부만 파싱 (성능 최적화)
-            const truncatedText =
-              text.length > 5000
-                ? text.substring(0, 5000) +
-                  '\n\n... (내용이 너무 길어 일부만 표시됩니다)'
-                : text
-            const parsedBlocks = parseFileEnhanced(truncatedText)
-
-            // 파일명을 헤딩으로 추가
-            const fileName = fileData.name
-            const fileHeading = {
-              type: 'comment',
-              content: `# ${fileName}`,
-              blocks: [
-                {
-                  type: 'heading',
-                  level: 1,
-                  children: [
-                    {
-                      type: 'text',
-                      value: fileName,
-                    },
-                  ],
-                },
-              ],
-              position: 'above',
-              lineNumber: 0,
-              id: `file-header-${Date.now()}-${fileName}`,
-            }
-
-            allParsedBlocks.push(fileHeading)
-            allParsedBlocks.push(...parsedBlocks)
-
-            // 파일 구분을 위한 구분선 추가 (마지막 파일이 아닌 경우)
-            if (filesToParse.indexOf(fileData) < filesToParse.length - 1) {
-              const separator = {
-                type: 'comment',
-                content: '---',
-                blocks: [
-                  {
-                    type: 'paragraph',
-                    children: [
-                      {
-                        type: 'text',
-                        value: '---',
-                      },
-                    ],
-                  },
-                ],
-                position: 'above',
-                lineNumber: 0,
-                id: `separator-${Date.now()}-${fileData.name}`,
-              }
-              allParsedBlocks.push(separator)
-            }
-          } catch (error) {
-            console.error(`Failed to parse file ${fileData.name}:`, error)
-          }
-        }
-
-        // 더 많은 파일이 있다면 안내 메시지 추가
-        if (blogData.uploadedFiles.length > 3) {
-          const moreFilesNotice = {
-            type: 'comment',
-            content: `\n## 📁 더 많은 파일 (${blogData.uploadedFiles.length - 3}개)\n\n성능 최적화를 위해 첫 3개 파일만 표시됩니다.`,
-            blocks: [
-              {
-                type: 'heading',
-                level: 2,
-                children: [
-                  {
-                    type: 'text',
-                    value: `📁 더 많은 파일 (${blogData.uploadedFiles.length - 3}개)`,
-                  },
-                ],
-              },
-              {
-                type: 'paragraph',
-                children: [
-                  {
-                    type: 'text',
-                    value: '성능 최적화를 위해 첫 3개 파일만 표시됩니다.',
-                  },
-                ],
-              },
-            ],
-            position: 'above',
-            lineNumber: 0,
-            id: `more-files-notice-${Date.now()}`,
-          }
-          allParsedBlocks.push(moreFilesNotice)
-        }
-
-        return allParsedBlocks
-      }
-
-      // 비동기 파싱 실행
-      parseUploadedFiles().then((parsedBlocks) => {
-        setBlogData((prev: any) => ({ ...prev, blocks: parsedBlocks }))
-      })
-
-      // 아직 파싱 중이면 빈 배열 반환
-      return blogData.blocks || []
-    }
-    console.log(blogId, 'is using default test block')
-    // 기본 testBlock2 사용
-    return parseFileEnhanced(testBlock2)
-  }, [blogData])
-
-  const title = blogData?.title || 'test'
+  const title = serverBlog?.title || ''
 
   // 편집 모드 블록 메모이제이션 (isEditing이 true일 때만 복사)
   const editableBlocks = useMemo(() => {
@@ -279,7 +129,7 @@ export const BlogViewerPage = ({ blogId }: { blogId: string }) => {
         scrollableHeight > 0
           ? Math.min(100, Math.max(0, (scrollTop / scrollableHeight) * 100))
           : 0
-      dispatch(updateProgress({ id: blogId, title, percent }))
+      dispatch(updateProgress({ id: fileId, title, percent }))
     }
 
     // scroll 이벤트 핸들러
@@ -307,7 +157,7 @@ export const BlogViewerPage = ({ blogId }: { blogId: string }) => {
       }
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [blogId, title, dispatch])
+  }, [fileId, title, dispatch])
 
   const onClickEdit = useCallback(() => {
     setIsEditing(!isEditing)
@@ -392,7 +242,7 @@ export const BlogViewerPage = ({ blogId }: { blogId: string }) => {
         ) : (
           // 일반 모드 - figma 스타일의 블록 렌더링
           <div className="space-y-6">
-            {blocks.map((block: any, i: number) => {
+            {serverBlog?.parsedBlocks?.map((block: any, i: number) => {
               if (block.type === 'code') {
                 return (
                   <div

@@ -6,16 +6,16 @@ export interface BlogProgressList {
 export const BlogProgressList: BlogProgressList = {
   progressList: [
     {
-      id: 'blog1',
+      id: 1,
       title: 'app.tsx 기본 문법을 소개합니다',
       percent: 45.5,
     },
     {
-      id: 'blog2',
+      id: 2,
       title: 'main.tsx 파일에서 React 애플리케이션을 초기화하는 방법',
       percent: 78.2,
     },
-    { id: 'blog3', title: 'public 폴더 사용 방법', percent: 12.0 },
-    { id: 'blog4', title: '화살표 컴포넌트 만들기', percent: 12.0 },
+    { id: 3, title: 'public 폴더 사용 방법', percent: 12.0 },
+    { id: 4, title: '화살표 컴포넌트 만들기', percent: 12.0 },
   ],
 }

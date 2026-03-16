@@ -17,17 +17,17 @@ export const TreeNodeItem = ({
 }: {
   node: TreeNode
   level: number
-  selectedId: string | null
-  onSelect: (id: string) => void
-  expandedIds?: string[]
-  onToggleExpand?: (nodeId: string) => void
+  selectedId: number | null
+  onSelect: (id: number) => void
+  expandedIds?: number[]
+  onToggleExpand?: (nodeId: number) => void
   onMoveNode?: (
-    draggedNodeId: string,
-    targetParentId: string | null,
+    draggedNodeId: number,
+    targetParentId: number | null,
     position: number,
   ) => void
   nodePosition: number
-  parentId: string | null
+  parentId: number | null
 }) => {
   // expandedIds에서 현재 노드가 펼쳐져 있는지 확인
   const isExpanded = expandedIds.includes(node.id)
@@ -65,13 +65,13 @@ export const TreeNodeItem = ({
   // 폴더인 경우에만 드롭 가능하게 설정
   const [{ isOver }, drop] = useDrop({
     accept: 'TREE_NODE',
-    hover: (item: { id: string; name: string; isDirectory: boolean }) => {
+    hover: (item: { id: number; name: string; isDirectory: boolean }) => {
       // 폴더 위에 호버 시 상태 설정
       if (node.isDirectory && item.id !== node.id) {
         setHoveredFolder(node.id)
       }
     },
-    drop: (item: { id: string; name: string; isDirectory: boolean }) => {
+    drop: (item: { id: number; name: string; isDirectory: boolean }) => {
       // 자기 자신에게 드롭하는 것은 방지
       if (item.id === node.id) return
 

@@ -27,7 +27,7 @@ const readingProgressSlice = createSlice({
         state.progressList.push(info)
       }
     },
-    removeProgress: (state, action: PayloadAction<string>) => {
+    removeProgress: (state, action: PayloadAction<number>) => {
       const blogId = action.payload
       state.progressList = state.progressList.filter(
         (item) => item.id !== blogId,

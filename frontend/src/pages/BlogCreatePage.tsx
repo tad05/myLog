@@ -198,7 +198,7 @@ export const BlogCreatePage = () => {
     localStorage.setItem(`project_${projectId}`, JSON.stringify(projectData))
 
     // 프로젝트 페이지로 이동 (파일 선택 없이)
-    navigate(`/myLog/blog/${projectId}`)
+    navigate(`/myLog/projects/${projectId}/files`)
   }
 
   // 간단한 FileTreeView 컴포넌트
