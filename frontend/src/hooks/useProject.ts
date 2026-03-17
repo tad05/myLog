@@ -1,4 +1,4 @@
-import { useQuery } from 'node_modules/@tanstack/react-query/build/modern/useQuery'
+import { useQuery } from '@tanstack/react-query'
 import { getProjects, getProjectFiles } from '@/api/projectApi'
 import { queryKeys } from '@/queries/queryKeys'
 

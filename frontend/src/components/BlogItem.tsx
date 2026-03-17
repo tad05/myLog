@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { css } from '@emotion/react'
-import { ListRow } from '@shared/ListRow'
-import { Flex } from '@shared/Flex'
-import { ProgressBar } from '@shared/ProgressBar'
+import { ListRow } from '@/shared/ListRow'
+import { Flex } from '@/shared/Flex'
+import { ProgressBar } from '@/shared/ProgressBar'
 import type { BlogInfo } from '@/models/dashboard'
 import { IconArrowRight } from '@/assets/arraw'
 

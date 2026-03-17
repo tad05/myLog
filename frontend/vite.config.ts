@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react({
-      jsxImportSource: '@emotion/react',
+      jsxRuntime: 'automatic',
       babel: {
         plugins: ['@emotion/babel-plugin'],
       },

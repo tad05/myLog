@@ -1,9 +1,9 @@
-import { ProgressBar } from '@shared/ProgressBar'
+import { ProgressBar } from '@/shared/ProgressBar'
 import { css } from '@emotion/react'
 import { useNavigate } from 'react-router-dom'
 import { ListGrid } from './shared/ListGrid'
 import type { BlogInfo } from '@/models/dashboard'
-import { Text } from '@shared/Text'
+import { Text } from '@/shared/Text'
 
 export const BlogGridItem = ({ id, title, percent }: BlogInfo) => {
   const navigate = useNavigate()

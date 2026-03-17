@@ -4,15 +4,16 @@
     "paths": {
       "@/*": ["src/*"],
       "@/assets/*": ["src/assets/*"],
-      "@components/*": ["src/components/*"],
-      "@shared/*": ["src/components/shared/*"],
-      "@styles/*": ["src/styles/*"],
-      "@features/*": ["src/features/*"],
-      "@mock/*": ["src/mock/*"],
-      "@models/*": ["src/models/*"],
-      "@lib/*": ["src/lib/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "@/queries/*": ["src/queries/*"]
+      "@/components/*": ["src/components/*"],
+      "@/shared/*": ["src/components/shared/*"],
+      "@/styles/*": ["src/styles/*"],
+      "@/features/*": ["src/features/*"],
+      "@/mock/*": ["src/mock/*"],
+      "@/models/*": ["src/models/*"],
+      "@/lib/*": ["src/lib/*"],
+      "@/hooks/*": ["src/hooks/*"],
+      "@/queries/*": ["src/queries/*"],
+      "@/api/*": ["src/api/*"]
     }
   }
 }

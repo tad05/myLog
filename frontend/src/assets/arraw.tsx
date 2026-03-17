@@ -1,4 +1,4 @@
-import { colors, type Colors } from '@styles/colorPalette'
+import { colors, type Colors } from '@/styles/colorPalette'
 
 interface IconArrowRightProps {
   color?: Colors

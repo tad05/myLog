@@ -1,5 +1,5 @@
 import { css, keyframes } from '@emotion/react'
-import { Text } from '@shared/Text'
+import { Text } from '@/shared/Text'
 
 interface ProgressBarProps {
   percent: number
