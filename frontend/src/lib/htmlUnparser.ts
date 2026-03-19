@@ -139,6 +139,7 @@ function parseList(element: Element): { block: BlockNode; markdown: string } {
 
   const listItems = element.querySelectorAll('li')
   listItems.forEach((li, index) => {
+    console.log('🔍 [htmlUnparser] Parsing list item:', li)
     const children = parseInlineElements(li)
     items.push({ children })
 
@@ -225,6 +226,7 @@ function parseInlineElements(element: Element): InlineNode[] {
   const nodes: InlineNode[] = []
 
   for (const node of element.childNodes) {
+    console.log('🔍 [htmlUnparser] Parsing inline node:', node.nodeType, node)
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent || ''
       // 빈 문자열이나 공백만 있는 경우 제외
@@ -233,9 +235,17 @@ function parseInlineElements(element: Element): InlineNode[] {
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       const childElement = node as Element
-      const inlineNode = parseInlineElement(childElement)
-      if (inlineNode) {
-        nodes.push(inlineNode)
+
+      // p 태그인 경우 자식 요소들을 직접 처리
+      if (childElement.tagName.toLowerCase() === 'p') {
+        const pChildren = parseInlineElements(childElement)
+        nodes.push(...pChildren) // p의 자식들을 직접 추가
+      } else {
+        const inlineNode = parseInlineElement(childElement)
+        if (inlineNode) {
+          console.log('🔍 [htmlUnparser] Parsed inline node:', inlineNode)
+          nodes.push(inlineNode)
+        }
       }
     }
   }
