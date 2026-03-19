@@ -1,10 +1,4 @@
-import { parseBlocks } from './blockParser'
-
-// parserSafe.ts
-export type BlockNode =
-  | { type: 'heading'; level: number; children: InlineNode[] }
-  | { type: 'paragraph'; children: InlineNode[] }
-  | { type: 'code'; code: string }
+import { type BlockNode } from './blockParser'
 
 export type InlineNode =
   | { type: 'text'; value: string }
@@ -18,7 +12,7 @@ export type InlineNode =
 export type CommentBlock = {
   type: 'comment'
   content: string // 원본 텍스트
-  blocks: ReturnType<typeof parseBlocks> // 파싱된 마크다운 블록들
+  blocks: BlockNode[] // BlockNode 배열로 복원
   position: 'above' | 'inline' | 'below'
   lineNumber: number
   id: string
@@ -32,11 +26,7 @@ export type CodeBlock = {
 }
 
 // 향상된 블록 노드 타입
-export type EnhancedBlockNode =
-  | { type: 'heading'; level: number; children: InlineNode[] }
-  | { type: 'paragraph'; children: InlineNode[] }
-  | CodeBlock
-  | CommentBlock
+export type EnhancedBlockNode = CodeBlock | CommentBlock
 
 // 고유 ID 생성 함수
 function generateCommentId(lineNumber: number): string {
@@ -71,7 +61,7 @@ export function parseFileEnhanced(content: string): EnhancedBlockNode[] {
       blocks.push({
         type: 'comment',
         content,
-        blocks: parseBlocks(content), // 마크다운 파싱 추가
+        blocks: [], // HTML unparser로 처리
         position: 'above',
         lineNumber: blockCommentStartLine,
         id: generateCommentId(blockCommentStartLine),
@@ -89,7 +79,7 @@ export function parseFileEnhanced(content: string): EnhancedBlockNode[] {
     blocks.push({
       type: 'comment',
       content: content.trim(),
-      blocks: parseBlocks(content.trim()), // 마크다운 파싱 추가
+      blocks: [], // HTML unparser로 처리
       position,
       lineNumber,
       id: generateCommentId(lineNumber),

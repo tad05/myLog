@@ -1,13 +1,13 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { updateProgress } from '../features/readingProgressSlice'
 import { Edit3, Save, X } from 'lucide-react'
 import type { RootState } from '@/store'
 import type { CSSObject } from '@emotion/react'
 import { BlockRenderer } from '@/components/renderer/BlockRenderer'
-import type { CommentBlock } from '../lib/parser'
+import type { CommentBlock, EnhancedBlockNode } from '../lib/parser'
 import { BlogEditPage } from './BlogEditPage'
-import { useFileBlog } from '@/hooks/useFile'
+import { useFileBlog, useSaveBlog } from '@/hooks/useFile'
 /** @jsxImportSource @emotion/react */
 
 const EMOTION_STYLES: CSSObject = {
@@ -48,7 +48,11 @@ export const BlogViewerPage = ({ fileId }: { fileId: number }) => {
   const dispatch = useDispatch()
 
   const { data: serverBlog } = useFileBlog(fileId)
+  const { mutate: saveBlogMutate } = useSaveBlog()
   const [isEditing, setIsEditing] = useState(false)
+  const editorRef = useRef<{ getCurrentBlocks: () => EnhancedBlockNode[] }>(
+    null,
+  )
 
   // Redux에서 저장된 progress 가져오기
   const savedProgress = useSelector(
@@ -58,6 +62,7 @@ export const BlogViewerPage = ({ fileId }: { fileId: number }) => {
   )
 
   const blocks = useMemo(() => {
+    console.log('📊 serverBlog.parsedBlocks:', serverBlog?.parsedBlocks)
     if (serverBlog?.parsedBlocks) {
       return serverBlog.parsedBlocks
     }
@@ -163,6 +168,20 @@ export const BlogViewerPage = ({ fileId }: { fileId: number }) => {
     setIsEditing(!isEditing)
   }, [isEditing])
 
+  const handleSaveClick = useCallback(() => {
+    // TODO: BlogEditPage에서 현재 블록 상태를 가져와서 저장
+    // 여기에 useMutation이나 API 호출 로직 추가
+    const currentBlocks = editorRef.current?.getCurrentBlocks()
+    console.log(fileId)
+    if (!currentBlocks || !fileId) return
+    saveBlogMutate({
+      fileId: fileId,
+      parsedBlocks: currentBlocks,
+    })
+
+    console.log('💾 저장 버튼 클릭됨', currentBlocks)
+  }, [])
+
   // 주석 블록 렌더링 함수 (정적)
   const renderStaticCommentBlock = (block: CommentBlock, index: number) => {
     return (
@@ -218,7 +237,7 @@ export const BlogViewerPage = ({ fileId }: { fileId: number }) => {
                   Cancel
                 </button>
                 <button
-                  onClick={onClickEdit}
+                  onClick={handleSaveClick}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Save className="w-4 h-4" />
@@ -233,7 +252,11 @@ export const BlogViewerPage = ({ fileId }: { fileId: number }) => {
         {isEditing ? (
           // 편집 모드: editableBlocks가 준비되면 렌더링
           editableBlocks.length > 0 ? (
-            <BlogEditPage key="edit-mode" blockList={editableBlocks} />
+            <BlogEditPage
+              key="edit-mode"
+              blockList={editableBlocks}
+              ref={editorRef}
+            />
           ) : (
             <div className="text-center py-8 text-gray-500">
               ⏳ 편집 모드 준비 중...

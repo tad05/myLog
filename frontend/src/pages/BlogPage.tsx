@@ -25,17 +25,23 @@ export const BlogPage = () => {
   const currentId = projectId || fileId || ''
 
   const { data: serverBlog } = useFileBlog(fileId)
-  const resolvedProjectId = projectId ?? serverBlog?.file.projectId
 
-  const { data: files } = useProjectFiles(resolvedProjectId)
+  const resolvedProjectId = projectId ?? serverBlog?.file.projectId
+  console.log('resolvedProjectId in BlogPage:', resolvedProjectId)
+  const { data: files, isLoading: filesLoading, error: filesError } = useProjectFiles(resolvedProjectId)
 
   const nodeMap = useMemo(() => {
     const map = new Map<number, FlatNode>()
-    flatNodes.forEach((n) => map.set(n.id, n))
+    flatNodes?.forEach((n) => map.set(n.id, n))
     return map
   }, [flatNodes])
 
-  const treeMap = useMemo(() => buildTree(flatNodes), [flatNodes])
+  const treeMap = useMemo(() => {
+    if (!flatNodes || flatNodes.length === 0) {
+      return []
+    }
+    return buildTree(flatNodes)
+  }, [flatNodes])
 
   const handleSelectNode = (nodeId: number) => {
     const node = nodeMap.get(nodeId)
@@ -261,50 +267,18 @@ export const BlogPage = () => {
 
   useEffect(() => {
     console.log('📁 프로젝트 파일 데이터 로드:', { files })
-    // 프로젝트 모드인 경우 프로젝트 파일 데이터 로드
-    if (isProjectMode && projectId && files) {
-      // FileItem을 FlatNode로 변환
-      // const convertedNodes: FlatNode[] = files.map((file) => {
-      //   // path를 기반으로 parentId 계산
-      //   const pathParts = file.path.split('/').filter(Boolean)
-      //   let parentId: number | null = null
-
-      //   // 루트 디렉토리가 아닌 경우 부모 찾기
-      //   if (pathParts.length > 1) {
-      //     const parentPath = '/' + pathParts.slice(0, -1).join('/')
-      //     const parentFile = files.find(
-      //       (f) => f.path === parentPath && f.isDirectory,
-      //     )
-      //     if (parentFile) {
-      //       parentId = parentFile.id.toString()
-      //     }
-      //   }
-
-      //   if (file.isDirectory) {
-      //     return {
-      //       id: file.id.toString(),
-      //       name: file.name,
-      //       path: file.path,
-      //       isDirectory: true,
-      //       parentId,
-      //     }
-      //   } else {
-      //     return {
-      //       id: file.id.toString(),
-      //       name: file.name,
-      //       path: file.path,
-      //       isDirectory: false,
-      //       parentId,
-      //       blogId: file.id, // 파일 ID를 blogId로 사용
-      //     }
-      //   }
-      // })
+    // files가 유효한 배열일 때만 설정
+    if (files && Array.isArray(files) && files.length > 0) {
       setFlatNodes(files)
+    } else if (files && Array.isArray(files) && files.length === 0) {
+      // 빈 배열인 경우도 설정 (프로젝트에 파일이 없는 경우)
+      setFlatNodes([])
     }
-  }, [files, isProjectMode, projectId])
+    // files가 undefined이면 기존 flatNodes 유지
+  }, [files])
 
   useEffect(() => {
-    if (flatNodes.length > 0 && currentId) {
+    if (flatNodes && flatNodes.length > 0 && currentId) {
       // 프로젝트 모드인 경우 루트 폴더만 펼치기
       if (isProjectMode) {
         const rootNode = flatNodes.find(
@@ -321,7 +295,7 @@ export const BlogPage = () => {
   }, [flatNodes, currentId, isProjectMode, fileId, nodeMap])
 
   useEffect(() => {
-    if (flatNodes.length === 0) return
+    if (!flatNodes || flatNodes.length === 0) return
 
     // 블로그 모드에서만 자동 노드 선택
     if (!isProjectMode && fileId) {
@@ -389,8 +363,16 @@ export const BlogPage = () => {
 export function buildTree(nodes: FlatNode[]): TreeNode[] {
   const nodeMap = new Map<number, TreeNode>()
   const roots: TreeNode[] = []
-  console.log('📂 buildTree 호출:', { nodes, nodesLength: nodes.length })
-
+  console.log('📂 buildTree 호출:', { 
+    nodes, 
+    nodesLength: nodes ? nodes.length : 'undefined',
+    isArray: Array.isArray(nodes)
+  })
+  
+  if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
+    console.log('⚠️ buildTree: 노드 데이터가 없습니다.')
+    return []
+  }
   // 1. 모든 노드를 map에 등록
   for (const node of nodes) {
     nodeMap.set(node.id, {
@@ -409,9 +391,7 @@ export function buildTree(nodes: FlatNode[]): TreeNode[] {
   // 2. 부모-자식 연결
   for (const node of nodes) {
     const treeNode = nodeMap.get(node.id)!
-    console.log(treeNode)
     if (node.parentId === null) {
-      console.log('📁 루트 노드 추가:', node.name)
       roots.push(treeNode)
     } else {
       const parent = nodeMap.get(node.parentId)

@@ -1,4 +1,11 @@
-import { useEffect, useRef, memo, useCallback } from 'react'
+import {
+  useEffect,
+  useRef,
+  memo,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from 'react'
 import { BlockRenderer } from '@/components/renderer/BlockRenderer'
 import { DndProvider } from 'react-dnd/dist/core/DndProvider'
 import { HTML5Backend } from 'react-dnd-html5-backend'
@@ -10,6 +17,7 @@ import { useDrop } from 'react-dnd/dist/hooks/useDrop/useDrop'
 import { TipTapEditor } from '@/components/TipTapEditor'
 import type { CSSObject } from '@emotion/serialize'
 import { CodeEditor } from '@/components/CodeEditor'
+import { parseHTMLToBlocks } from '../lib/htmlUnparser'
 
 // 블록 항목 컴포넌트를 외부로 분리 (호버 시 불필요한 리렌더링 방지)
 const BlockItem = memo(
@@ -189,16 +197,33 @@ const BlockItem = memo(
   },
 )
 
-export const BlogEditPage = ({
-  blockList,
-}: {
-  blockList: EnhancedBlockNode[]
-}) => {
+export const BlogEditPage = forwardRef<
+  { getCurrentBlocks: () => EnhancedBlockNode[] },
+  { blockList: EnhancedBlockNode[] }
+>(({ blockList }, ref) => {
   // 📍 BlogEditPage 리렌더링 감지
   console.log(
     '📍 [BlogEditPage] 리렌더링 발생, blockList length:',
     blockList.length,
   )
+
+  // 최신 blockList 상태를 추적하는 ref
+  const blockListRef = useRef<EnhancedBlockNode[]>(blockList)
+
+  // 부모가 호출할 수 있는 메서드 노출
+  useImperativeHandle(
+    ref,
+    () => ({
+      getCurrentBlocks: () => blockListRef.current,
+    }),
+    [],
+  )
+
+  // blockList prop이 변경될 때마다 ref 업데이트
+  useEffect(() => {
+    blockListRef.current = blockList
+  }, [blockList])
+
   // ===== 스타일 상수 =====
   const BLOCK_HTML_STYLES = {
     tableStyle: 'border-collapse: collapse; width: 100%; margin: 16px 0;',
@@ -355,9 +380,24 @@ export const BlogEditPage = ({
   // Comment 블록 onChange 콜백 (메모이제이션)
   const handleCommentChange = useCallback(
     (blockIndex: number, htmlValue: string) => {
-      // 현재는 로컬 변경만 처리 (부모와 동기화 필요시 콜백 추가)
-      ;(blockList[blockIndex] as CommentBlock).content = htmlValue
-      ;(blockList[blockIndex] as CommentBlock).blocks = []
+      console.log('📝 [handleCommentChange] HTML input:', htmlValue)
+
+      // HTML을 블록 구조로 마이그레이션
+      const parsed = parseHTMLToBlocks(htmlValue)
+
+      console.log('📝 [handleCommentChange] Parsed result:', parsed)
+
+      // CommentBlock 업데이트
+      ;(blockList[blockIndex] as CommentBlock).content = parsed.content
+      ;(blockList[blockIndex] as CommentBlock).blocks = parsed.blocks
+
+      // ref도 업데이트 (최신 상태 반영)
+      blockListRef.current = [...blockList]
+
+      console.log(
+        '📝 [handleCommentChange] Updated block:',
+        blockList[blockIndex],
+      )
     },
     [blockList],
   )
@@ -366,6 +406,9 @@ export const BlogEditPage = ({
     (blockIndex: number, value: string) => {
       // 현재는 로컬 변경만 처리
       ;(blockList[blockIndex] as any).code = value
+
+      // ref도 업데이트 (최신 상태 반영)
+      blockListRef.current = [...blockList]
     },
     [blockList],
   )
@@ -393,6 +436,10 @@ export const BlogEditPage = ({
           }
 
     blockList.splice(afterIndex + 1, 0, newBlock as any)
+
+    // ref도 업데이트
+    blockListRef.current = [...blockList]
+
     setInsertAfterIndex(null)
 
     // 새로 추가된 블록을 즉시 편집 모드로 전환
@@ -405,6 +452,9 @@ export const BlogEditPage = ({
       const draggedBlock = blockList[dragIndex]
       blockList.splice(dragIndex, 1)
       blockList.splice(hoverIndex, 0, draggedBlock)
+
+      // ref도 업데이트
+      blockListRef.current = [...blockList]
 
       // React가 변경을 감지하도록 강제 리렌더링
       setForceUpdate((prev) => prev + 1)
@@ -456,11 +506,14 @@ export const BlogEditPage = ({
         setEditingBlockIndex(i - 1)
 
         merged = true
+        console.log('blockList', blockList)
       }
     }
 
     // 병합이 발생한 경우에만 리렌더링
     if (merged) {
+      // ref도 업데이트
+      blockListRef.current = [...blockList]
       setForceUpdate((prev) => prev + 1)
     }
   }, [blockList])
@@ -944,7 +997,9 @@ export const BlogEditPage = ({
       return () => document.removeEventListener('click', handleGlobalClick)
     }
   }, [editingBlockIndex])
-
+  useEffect(() => {
+    console.log(blockList)
+  }, [blockList])
   return (
     <DndProvider backend={HTML5Backend}>
       <div>
@@ -967,4 +1022,4 @@ export const BlogEditPage = ({
       </div>
     </DndProvider>
   )
-}
+})

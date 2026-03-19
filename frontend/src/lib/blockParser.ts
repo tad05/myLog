@@ -4,6 +4,9 @@ import { parseInline, type InlineNode } from './inlineParser'
    TYPES
 =========================== */
 
+// Re-export InlineNode for convenience
+export type { InlineNode }
+
 export type BlockNode =
   | { type: 'heading'; level: number; children: InlineNode[] }
   | { type: 'paragraph'; children: InlineNode[] }
