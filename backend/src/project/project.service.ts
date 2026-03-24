@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProjectDto } from './project.dto';
 
 @Injectable()
 export class ProjectService {
@@ -19,6 +20,23 @@ export class ProjectService {
         projectId: projectId,
       },
       orderBy: [{ isDirectory: 'desc' }, { path: 'asc' }],
+    });
+  }
+
+  async createProject(projectData: ProjectDto) {
+    return await this.prisma.project.create({
+      data: {
+        userId: projectData.userId,
+        title: projectData.title,
+        description: projectData.description,
+        thumbnail: projectData.thumbnail,
+        fileCount: projectData.fileCount,
+      },
+    });
+  }
+  async deleteProject(projectId: number) {
+    await this.prisma.project.delete({
+      where: { id: projectId },
     });
   }
 }

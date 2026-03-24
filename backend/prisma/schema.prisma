@@ -27,8 +27,8 @@ model Project {
   description String?   @db.Text
   createdAt   DateTime? @default(now()) @map("created_at") @db.DateTime(0)
   thumbnail   String?   @db.VarChar(500)
-  file_count  Int?      @default(0)
-  updated_at  DateTime? @default(now()) @db.DateTime(0)
+  fileCount   Int?      @default(0) @map("file_count")
+  updatedAt   DateTime? @default(now()) @map("updated_at") @db.DateTime(0)
   files       File[]
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_projects_user")
 
@@ -42,9 +42,9 @@ model File {
   name        String    @db.VarChar(255)
   path        String?   @db.VarChar(500)
   language    String?   @db.VarChar(50)
-  raw_content String?   @db.LongText
-  created_at  DateTime? @default(now()) @db.DateTime(0)
-  file_size   Int?
+  rawContent  String?   @db.LongText @map("raw_content")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  fileSize    Int?      @map("file_size")
   isDirectory Boolean   @default(false) @map("is_directory")
   parentId    Int?      @map("parent_id")
   blog        Blog[]
@@ -56,13 +56,13 @@ model File {
   @@index([projectId], map: "idx_files_project_id")
   @@index([projectId], map: "idx_project_id")
   @@index([parentId], map: "fk_file_parent")
-  @@fulltext([raw_content], map: "idx_file_code")
+  @@fulltext([rawContent], map: "idx_file_code")
   @@map("file")
 }
 
 model Blog {
   id             Int              @id @default(autoincrement())
-  fileId         Int              @map("file_id")
+  fileId         Int              @unique @map("file_id")
   title          String?          @db.VarChar(255)
   parsedBlocks   Json?            @map("parsed_blocks")
   createdAt      DateTime?        @default(now()) @map("created_at") @db.DateTime(0)
@@ -86,7 +86,7 @@ model BlogStats {
   likeCount    Int?      @default(0) @map("like_count")
   commentCount Int?      @default(0) @map("comment_count")
   scrapCount   Int?      @default(0) @map("scrap_count")
-  updated_at   DateTime? @default(now()) @db.DateTime(0)
+  updatedAt   DateTime?  @default(now()) @map("updated_at") @db.DateTime(0)
   blog         Blog      @relation(fields: [blogId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blog_stats_blog")
 
   @@map("blog_stat")
@@ -109,12 +109,12 @@ model ReadingHistory {
   id           Int       @id @default(autoincrement())
   userId       Int       @map("user_id")
   blogId       Int       @map("blog_id")
-  last_read_at DateTime? @default(now()) @db.DateTime(0)
+  lastReadAt DateTime? @default(now()) @map("last_read_at") @db.DateTime(0)
   blog         Blog      @relation(fields: [blogId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reading_blog")
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reading_user")
 
   @@unique([userId, blogId], map: "uq_reading_user_blog")
   @@index([blogId], map: "fk_reading_blog")
-  @@index([userId, last_read_at(sort: Desc)], map: "idx_reading_user")
+  @@index([userId, lastReadAt(sort: Desc)], map: "idx_reading_user")
   @@map("reading_history")
 }

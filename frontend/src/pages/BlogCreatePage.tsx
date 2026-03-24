@@ -13,10 +13,11 @@ import {
   ChevronRight,
   ChevronDown,
 } from 'lucide-react'
-import { parseFileEnhanced } from '../lib/parser'
+import { parseFileEnhanced, type EnhancedBlockNode } from '../lib/parser'
+import { parseBlocks } from '@/lib/blockParser'
 import { TipTapEditor } from '@/components/TipTapEditor'
 import { CodeEditor } from '@/components/CodeEditor'
-
+import { useCreateProject } from '@/hooks/useProject'
 type Mode = 'select' | 'upload' | 'write'
 
 interface ContentBlock {
@@ -29,9 +30,9 @@ interface ContentBlock {
 interface FileNode {
   id: string
   name: string
-  type: 'file' | 'folder'
+  isDirectory: boolean
   children?: FileNode[]
-  postId?: string
+  file?: File
 }
 
 export const BlogCreatePage = () => {
@@ -45,6 +46,8 @@ export const BlogCreatePage = () => {
   const [projectDescription, setProjectDescription] = useState('')
   const [files, setFiles] = useState<FileNode[]>([])
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+
+  const { mutate: createProjectMutate } = useCreateProject()
 
   const handleFolderUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -73,8 +76,8 @@ export const BlogCreatePage = () => {
     const newFiles: FileNode[] = fileArray.map((file, index) => ({
       id: `file-${Date.now()}-${index}`,
       name: file.name,
-      type: 'file' as const,
-      postId: `post-${Date.now()}-${index}`,
+      isDirectory: false,
+      file: file,
     }))
 
     setFiles([...files, ...newFiles])
@@ -107,9 +110,9 @@ export const BlogCreatePage = () => {
 
         if (!folderMap.has(currentPath)) {
           const folderNode: FileNode = {
-            id: `folder-${Date.now()}-${currentPath}`,
+            id: `folder-${Date.now()}-${i}`,
             name: folderName,
-            type: 'folder',
+            isDirectory: true,
             children: [],
           }
           folderMap.set(currentPath, folderNode)
@@ -128,8 +131,8 @@ export const BlogCreatePage = () => {
       const fileNode: FileNode = {
         id: `file-${Date.now()}-${index}`,
         name: fileName,
-        type: 'file',
-        postId: `post-${Date.now()}-${index}`,
+        isDirectory: false,
+        file,
       }
       currentLevel.push(fileNode)
     })
@@ -138,67 +141,59 @@ export const BlogCreatePage = () => {
   }
 
   const handleCreateProject = async () => {
-    // 새로운 프로젝트 ID 생성
-    const projectId = `project-${Date.now()}`
+    const buildPayload = async (nodes: FileNode[]) => {
+      const result: any[] = []
 
-    // 파일들을 미리 읽고 각각에 개별 블로그ID 생성
-    const filesWithContent = await Promise.all(
-      uploadedFiles.map(async (file, index) => {
-        try {
-          const content = await file.text()
-          const fileBlogId = `blog-${Date.now()}-${index}`
-
-          // 각 파일의 파싱된 내용을 개별 localStorage에 저장
-          const fileBlocks = parseFileEnhanced(content)
-          const fileBlogData = {
-            id: fileBlogId,
-            fileName: file.name,
-            content: content,
-            blocks: fileBlocks,
-            projectId: projectId,
-            createdAt: new Date().toISOString(),
-          }
-
-          // 각 파일을 개별적으로 저장
-          localStorage.setItem(
-            `blog_${fileBlogId}`,
-            JSON.stringify(fileBlogData),
-          )
-
-          return {
-            name: file.name,
-            content: content,
-            type: file.type,
-            size: file.size,
-            blogId: fileBlogId,
-          }
-        } catch (error) {
-          console.error(`Failed to read file ${file.name}:`, error)
-          const fileBlogId = `blog-${Date.now()}-${index}`
-          return {
-            name: file.name,
-            content: '',
-            type: file.type,
-            size: file.size,
-            blogId: fileBlogId,
+      for (const node of nodes) {
+        if (node.isDirectory) {
+          result.push({
+            name: node.name,
+            isDirectory: true,
+            children: await buildPayload(node.children || []),
+          })
+        } else {
+          try {
+            const rawContent = await node.file?.text()
+            const parsedBlocks = rawContent
+              ? parseFileEnhanced(rawContent).map((block) =>
+                  block.type === 'code'
+                    ? block
+                    : {
+                        ...block,
+                        blocks: block.content ? parseBlocks(block.content) : [],
+                      },
+                )
+              : []
+            result.push({
+              name: node.name,
+              isDirectory: false,
+              rawContent,
+              parsedBlocks
+            })
+          } catch (error) {
+            console.error(`Failed to read file ${node.name}`, error)
           }
         }
-      }),
-    )
-
-    // 프로젝트 메타데이터 저장
-    const projectData = {
-      id: projectId,
-      title: projectName || 'Uploaded Project',
-      description: projectDescription,
-      uploadedFiles: filesWithContent,
-      createdAt: new Date().toISOString(),
+      }
+      return result
     }
 
-    localStorage.setItem(`project_${projectId}`, JSON.stringify(projectData))
+    const projectData = {
+      userId: 1, // 실제로는 로그인한 사용자 ID를 사용해야 함
+      title: projectName || 'Uploaded Project',
+      description: projectDescription,
+      fileCount: uploadedFiles.filter((file) => file.type !== 'folder').length,
+    }
+    const filePayload = await buildPayload(files)
+    console.log('Project data to create:', projectData)
+    console.log('File payload to create:', filePayload)
+    createProjectMutate({
+      projectData: projectData,
+      fileData: filePayload,
+    })
 
     // 프로젝트 페이지로 이동 (파일 선택 없이)
-    navigate(`/myLog/projects/${projectId}/files`)
+    // navigate(`/myLog/projects/${projectId}/files`)
   }
 
   // 간단한 FileTreeView 컴포넌트
@@ -222,7 +217,7 @@ export const BlogCreatePage = () => {
     const renderNode = (node: FileNode, level: number = 0) => (
       <div key={node.id} style={{ paddingLeft: `${level * 16}px` }}>
         <div className="flex items-center gap-2 py-1">
-          {node.type === 'folder' ? (
+          {node.isDirectory ? (
             <>
               <button
                 onClick={() => toggleFolder(node.id)}
@@ -244,17 +239,28 @@ export const BlogCreatePage = () => {
             </div>
           )}
         </div>
-        {node.type === 'folder' &&
-          expandedFolders.has(node.id) &&
-          node.children && (
-            <div>
-              {node.children.map((child) => renderNode(child, level + 1))}
-            </div>
-          )}
+        {node.isDirectory && expandedFolders.has(node.id) && node.children && (
+          <div>
+            {node.children.map((child) => renderNode(child, level + 1))}
+          </div>
+        )}
       </div>
     )
 
-    return <div>{files.map((file) => renderNode(file))}</div>
+    return (
+      <div>
+        {files
+          .sort((a, b) => {
+            // 폴더 먼저
+            if (a.isDirectory && !b.isDirectory) return -1
+            if (!a.isDirectory && b.isDirectory) return 1
+
+            // 둘 다 같으면 이름 정렬
+            return a.name.localeCompare(b.name)
+          })
+          .map((file) => renderNode(file))}
+      </div>
+    )
   }
 
   const updateBlockContent = (blockId: string, newContent: string) => {

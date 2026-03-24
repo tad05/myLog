@@ -1,13 +1,23 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { BlogService } from './blog.service';
-import { SaveBlogDto } from './blog.dto';
+import { BlogDto } from './blog.dto';
 
 @Controller('files')
 export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
   @Post(':fileId')
-  saveBlog(@Param('fileId') fileId: string, @Body() dto: SaveBlogDto) {
-    return this.blogService.saveBlog(Number(fileId), dto);
+  saveBlog(
+    @Param('fileId', ParseIntPipe) fileId: number,
+    @Body() dto: BlogDto,
+  ) {
+    return this.blogService.saveBlog(fileId, dto);
   }
 }

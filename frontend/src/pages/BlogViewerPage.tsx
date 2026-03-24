@@ -7,7 +7,7 @@ import type { CSSObject } from '@emotion/react'
 import { BlockRenderer } from '@/components/renderer/BlockRenderer'
 import type { CommentBlock, EnhancedBlockNode } from '../lib/parser'
 import { BlogEditPage } from './BlogEditPage'
-import { useFileBlog, useSaveBlog } from '@/hooks/useFile'
+import { useBlog, useSaveBlog } from '@/hooks/useBlog'
 /** @jsxImportSource @emotion/react */
 
 const EMOTION_STYLES: CSSObject = {
@@ -47,7 +47,7 @@ const EMOTION_STYLES: CSSObject = {
 export const BlogViewerPage = ({ fileId }: { fileId: number }) => {
   const dispatch = useDispatch()
 
-  const { data: serverBlog } = useFileBlog(fileId)
+  const { data: serverBlog } = useBlog(fileId)
   const { mutate: saveBlogMutate } = useSaveBlog()
   const [isEditing, setIsEditing] = useState(false)
   const editorRef = useRef<{ getCurrentBlocks: () => EnhancedBlockNode[] }>(

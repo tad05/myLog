@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { BlogViewerPage } from './BlogViewerPage'
 import { Tree } from '@/components/Tree'
 import { useProjectFiles } from '@/hooks/useProject'
-import { useFileBlog } from '@/hooks/useFile'
+import { useBlog } from '@/hooks/useBlog'
 
 export const BlogPage = () => {
   const navigate = useNavigate()
@@ -24,11 +24,14 @@ export const BlogPage = () => {
   const isProjectMode = !!projectId
   const currentId = projectId || fileId || ''
 
-  const { data: serverBlog } = useFileBlog(fileId)
-
+  const { data: serverBlog } = useBlog(fileId)
   const resolvedProjectId = projectId ?? serverBlog?.file.projectId
   console.log('resolvedProjectId in BlogPage:', resolvedProjectId)
-  const { data: files, isLoading: filesLoading, error: filesError } = useProjectFiles(resolvedProjectId)
+  const {
+    data: files,
+    isLoading: filesLoading,
+    error: filesError,
+  } = useProjectFiles(resolvedProjectId)
 
   const nodeMap = useMemo(() => {
     const map = new Map<number, FlatNode>()
@@ -363,12 +366,12 @@ export const BlogPage = () => {
 export function buildTree(nodes: FlatNode[]): TreeNode[] {
   const nodeMap = new Map<number, TreeNode>()
   const roots: TreeNode[] = []
-  console.log('📂 buildTree 호출:', { 
-    nodes, 
+  console.log('📂 buildTree 호출:', {
+    nodes,
     nodesLength: nodes ? nodes.length : 'undefined',
-    isArray: Array.isArray(nodes)
+    isArray: Array.isArray(nodes),
   })
-  
+
   if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
     console.log('⚠️ buildTree: 노드 데이터가 없습니다.')
     return []

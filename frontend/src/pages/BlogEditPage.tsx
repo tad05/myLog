@@ -997,9 +997,7 @@ export const BlogEditPage = forwardRef<
       return () => document.removeEventListener('click', handleGlobalClick)
     }
   }, [editingBlockIndex])
-  useEffect(() => {
-    console.log(blockList)
-  }, [blockList])
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div>
