@@ -35,6 +35,14 @@ export const getBlog = async (fileId: number) => {
   return await res.json()
 }
 
+export const getBlogs = async () => {
+  const res = await fetch(`${API_BASE}/blogs`)
+  if (!res.ok) {
+    throw new Error('블로그 목록 조회 실패')
+  }
+  return await res.json()
+}
+
 export const saveBlog = async ({
   fileId,
   parsedBlocks,

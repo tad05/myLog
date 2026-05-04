@@ -1,11 +1,15 @@
 import { API_BASE } from './client'
+import { cleanUndefinedParams } from './util'
+import axios from 'axios'
 
-export const getProjects = async (userId: number) => {
-  const res = await fetch(`${API_BASE}/projects?userId=${userId}`)
-  if (!res.ok) {
+export const getProjects = async (userId?: number) => {
+  const res = await axios.get(`${API_BASE}/projects`, {
+    params: cleanUndefinedParams({ userId }),
+  })
+  if (res.statusText !== 'OK') {
     throw new Error('프로젝트 조회 실패')
   }
-  return await res.json()
+  return res.data
 }
 
 export const getProjectFiles = async (projectId?: number | null) => {

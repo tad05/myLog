@@ -6,10 +6,10 @@ import { ProjectDto } from './project.dto';
 export class ProjectService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getProjects(userId: number) {
+  async getProjects(userId: number | null) {
     return this.prisma.project.findMany({
       where: {
-        userId: userId,
+        ...(userId !== undefined && { userId }),
       },
     });
   }

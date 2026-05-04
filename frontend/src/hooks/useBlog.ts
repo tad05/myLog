@@ -1,12 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/queries/queryKeys'
-import { getBlog, saveBlog } from '@/api/blogApi'
+import { getBlog, getBlogs, saveBlog } from '@/api/blogApi'
 
 export const useBlog = (fileId?: number) => {
   return useQuery({
     queryKey: queryKeys.blog(fileId!),
     queryFn: () => getBlog(fileId!),
-    enabled: !!fileId,
+    enabled: fileId !== null && fileId !== undefined,
+  })
+}
+export const useBlogs = () => {
+  return useQuery({
+    queryKey: queryKeys.blogs(),
+    queryFn: () => getBlogs(),
   })
 }
 export const useSaveBlog = () => {

@@ -24,6 +24,7 @@
     "@tiptap/pm": "^3.20.0",
     "@tiptap/react": "^3.20.0",
     "@tiptap/starter-kit": "^3.20.0",
+    "axios": "^1.15.2",
     "classnames": "^2.5.1",
     "lucide-react": "^0.577.0",
     "monaco-editor-core": "^0.55.1",

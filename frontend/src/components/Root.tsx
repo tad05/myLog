@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { Home, FolderOpen, PenLine } from 'lucide-react'
+import { Home, FolderOpen, Folders, PenLine } from 'lucide-react'
 /** @jsxImportSource @emotion/react */
 
 export function Root() {
@@ -34,16 +34,17 @@ export function Root() {
     const currentPath = location.pathname
 
     // /myLog/projects 경로인 경우
+    if (path === '/myLog/my-projects') {
+      return currentPath.startsWith('/myLog/my-projects')
+    }
+
     if (path === '/myLog/projects') {
       return currentPath.startsWith('/myLog/projects')
     }
 
     // /myLog 경로인 경우 (projects가 아닌 경우만)
     if (path === '/myLog') {
-      return (
-        (currentPath === '/' || currentPath === '/myLog') &&
-        !currentPath.startsWith('/myLog/projects')
-      )
+      return currentPath === '/' || currentPath === '/myLog'
     }
 
     return false
@@ -71,6 +72,18 @@ export function Root() {
           </Link>
 
           <Link
+            to="/myLog/my-projects"
+            className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
+              isActive('/myLog/my-projects')
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+            title="myProjects"
+          >
+            <FolderOpen className="w-5 h-5" />
+          </Link>
+
+          <Link
             to="/myLog/projects"
             className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
               isActive('/myLog/projects')
@@ -79,7 +92,7 @@ export function Root() {
             }`}
             title="Projects"
           >
-            <FolderOpen className="w-5 h-5" />
+            <Folders className="w-5 h-5" />
           </Link>
         </nav>
       </div>

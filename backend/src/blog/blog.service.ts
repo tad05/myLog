@@ -6,6 +6,12 @@ import { BlogDto } from './blog.dto';
 export class BlogService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getBlogs() {
+    return this.prisma.blog.findMany({
+      where: { isPublic: true },
+    });
+  }
+
   async saveBlog(fileId: number, dto: BlogDto) {
     const searchText = dto.parsedBlocks
       ?.map((b: any) => {

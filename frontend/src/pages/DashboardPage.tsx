@@ -17,8 +17,7 @@ export const DashboardPage = () => {
       <div className="max-w-5xl mx-auto px-8 py-12">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl mb-2 text-gray-900">Welcome back</h1>
-          <p className="text-gray-600">Continue where you left off</p>
+          <h1 className="text-4xl mb-2 text-gray-900">Main</h1>
         </div>
 
         {/* Recently Read Section */}

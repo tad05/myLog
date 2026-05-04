@@ -1,6 +1,6 @@
 // src/queries/queryKeys.ts
 export const queryKeys = {
-  projects: (userId: number) => ['projects', userId] as const,
+  projects: (userId?: number) => ['projects', userId] as const,
 
   project: (projectId: number) => ['project', projectId] as const,
 
@@ -8,5 +8,7 @@ export const queryKeys = {
 
   file: (fileId: number) => ['file', fileId] as const,
 
-  blog: (fileId: number) => ['blog', fileId] as const,
+  blog: (fileId?: number) => ['blog', fileId] as const,
+
+  blogs: () => ['blogs'] as const,
 }

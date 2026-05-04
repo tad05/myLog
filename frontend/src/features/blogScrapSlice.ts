@@ -25,7 +25,7 @@ const blogScrapSlice = createSlice({
         state.scrapList.push(info)
       }
     },
-    removeScrap: (state, action: PayloadAction<string>) => {
+    removeScrap: (state, action: PayloadAction<number>) => {
       const blogId = action.payload
       state.scrapList = state.scrapList.filter((item) => item.id !== blogId)
     },

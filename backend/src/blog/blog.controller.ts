@@ -9,11 +9,16 @@ import {
 import { BlogService } from './blog.service';
 import { BlogDto } from './blog.dto';
 
-@Controller('files')
+@Controller()
 export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
-  @Post(':fileId')
+  @Get('/blogs')
+  getBlogByFileId() {
+    return this.blogService.getBlogs();
+  }
+
+  @Post('files/:fileId')
   saveBlog(
     @Param('fileId', ParseIntPipe) fileId: number,
     @Body() dto: BlogDto,
