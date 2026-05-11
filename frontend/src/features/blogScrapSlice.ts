@@ -7,10 +7,15 @@ interface BlogScrapState {
 }
 
 // mockup initial state
+// const initialState: BlogScrapState = {
+//   scrapList: BlogScrapList.scrapList,
+// }
 const initialState: BlogScrapState = {
-  scrapList: BlogScrapList.scrapList,
+  scrapList: [
+    { id: 2, title: 'testProject', percent: 50 },
+    { id: 4, title: 'anna_1', percent: 30 },
+  ],
 }
-// const initialState: BlogScrapState = { scrapList: [] }
 
 const blogScrapSlice = createSlice({
   name: 'scrap',

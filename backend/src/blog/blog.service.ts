@@ -8,7 +8,7 @@ export class BlogService {
 
   async getBlogs() {
     return this.prisma.blog.findMany({
-      where: { isPublic: true },
+      where: { visibility: 'PUBLIC' },
     });
   }
 

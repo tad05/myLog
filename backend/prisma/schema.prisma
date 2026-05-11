@@ -69,7 +69,7 @@ model Blog {
   slug           String?          @db.VarChar(255)
   updatedAt      DateTime?        @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
   searchText     String?          @map("search_text") @db.Text
-  isPublic       Boolean          @default(false) @map("is_public")
+  visibility     String           @default("PRIVATE")
   file           File             @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blogs_file")
   stats          BlogStats?
   readingHistory ReadingHistory[]
